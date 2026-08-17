@@ -105,6 +105,11 @@
   .chip { background:rgba(255,149,0,.16); color:#ffb340; font-size:11.5px; padding:4px 10px; border-radius:20px; font-weight:600; }
 
   .opts { padding:6px 0 12px; }
+  .showall { padding:15px 18px; font-size:14.5px; color:#ff9500; font-weight:700;
+    cursor:pointer; border-bottom:1px solid #232323; }
+  .showall:active { background:#242424; }
+  .divider { padding:16px 18px 7px; font-size:11.5px; color:#6e6e6e;
+    text-transform:uppercase; letter-spacing:1.1px; font-weight:700; border-top:1px solid #262626; }
   .multi-note { padding:10px 18px 2px; font-size:12.5px; color:#7d7d7d; font-style:italic; }
   .opt { display:flex; align-items:center; gap:13px; padding:15px 16px; border-bottom:1px solid #232323;
     cursor:pointer; transition:background .12s; min-height:60px; }
@@ -230,7 +235,7 @@
 <div class="rotate"><div class="ico">📱</div><div class="msg" id="rotMsg"></div></div>
 <div class="app">
   <div class="hdr">
-    <div class="hdr-btn hidden" id="hdrBack" onclick="goBack()">‹</div>
+    <div class="hdr-btn hidden" id="hdrBack" onclick="navBack()">‹</div>
     <div class="hdr-txt"><div class="hdr-step" id="hdrStep"></div><div class="hdr-title" id="hdrTitle"></div></div>
     <div class="hdr-btn gear" id="hdrGear" onclick="openSettings()">⚙</div>
   </div>
@@ -349,6 +354,8 @@ const LIGHTING = [
   en:['Indoors, window light','Natural light inside'],wb:'5600K',isoMin:400,zebra:'95'},
  {id:'indoor-lamp',ev:6,ru:['Помещение, лампы','Потолочный свет, лампы накаливания или LED'],
   en:['Indoors, artificial light','Ceiling lights, tungsten or LED'],wb:'3000–4000K',isoMin:800,zebra:'70'},
+ {id:'night-dark',ev:-6.5,ru:['Ночь, тёмное небо','Вдали от городов, только звёзды'],
+  en:['Night, dark sky','Away from towns, stars only'],wb:'4000K',isoMin:1600,zebra:'70'},
  {id:'studio',ev:10,ru:['Студия, постановочный свет','Контролируемый свет, вспышки или LED-панели'],
   en:['Studio, controlled light','Strobes or LED panels'],wb:{ru:'5500K по замеру',en:'5500K, metered'},isoMin:100,zebra:'95'}
 ];
@@ -463,6 +470,42 @@ const FL_CURT = [
  {id:'rear',  ru:['По второй шторке','Шлейф позади движения'], en:['Rear curtain','Trail behind the motion']}
 ];
 const SYNC_SPEED = 1/160;
+
+/* какие сюжеты уместны при каком освещении — остальные прячутся под «показать остальные» */
+const FIT_SUBJ = {
+ 'sun-hard':     ['landscape','architecture','street','portrait','walk','action','detail'],
+ 'sun-soft':     ['landscape','architecture','street','portrait','talking','walk','action','detail'],
+ 'partly':       ['landscape','architecture','street','portrait','talking','walk','action','detail'],
+ 'bright-cloud': ['landscape','architecture','street','portrait','talking','walk','action','detail'],
+ 'overcast':     ['landscape','architecture','street','portrait','talking','walk','detail'],
+ 'dusk':         ['landscape','architecture','street','portrait','walk','detail'],
+ 'night-street': ['architecture','street','portrait','walk','detail'],
+ 'night-dark':   ['night-sky','landscape'],
+ 'indoor-window':['portrait','talking','detail','architecture','street'],
+ 'indoor-lamp':  ['portrait','talking','detail','architecture','street'],
+ 'studio':       ['portrait','talking','detail']
+};
+/* какое оснащение уместно — зависит от освещения и сюжета */
+function fitGear(id){
+  const L=sel.lighting, S=sel.subject;
+  const dark = ['dusk','night-street','night-dark','indoor-lamp'].includes(L);
+  const bright = ['sun-hard','sun-soft','partly','bright-cloud'].includes(L);
+  const vid = ['talking','walk'].includes(S);
+  switch(id){
+    case 'nd':      return bright || L==='overcast';
+    case 'tripod':  return dark || L==='studio' || ['landscape','architecture','detail','night-sky','talking'].includes(S);
+    case 'gimbal':  return vid;
+    case 'mic':     return vid;
+    case 'light':   return dark || L==='studio' || L==='indoor-window';
+    case 'flash':   return !vid && (dark || L==='studio' || bright);
+    case 'monitor': return vid || L==='studio';
+    default:        return true;
+  }
+}
+function fitSubj(id){
+  const f = FIT_SUBJ[sel.lighting];
+  return !f || f.includes(id);
+}
 
 const GEAR = [
  {id:'nd',ru:['ND или VND фильтр','Держать выдержку 1/50 при открытой диафрагме'],en:['ND or VND filter','Keep 1/50 shutter at wide aperture']},
@@ -634,6 +677,22 @@ function computeExposure(){
     }
     r.t = tBase; r.iso = iso;
 
+  } else if (S.id === 'night-sky') {
+    /* звёзды: выдержку задаёт правило 500, диафрагму открываем, ISO добирает экспозицию */
+    const focal = LN ? LN.f[0] : 20;
+    const tStar = Math.min(30, 500/(focal*CROP));
+    const below = SH_SERIES.filter(x=>x<=tStar);
+    r.t = below.length ? below[below.length-1] : SH_SERIES[SH_SERIES.length-1];
+    r.N = widest ? nearest(AP_SERIES, widest) : N;
+    r.starRule = tStar;
+    r.astro = true;
+    r.ndApplied = 0;
+    const need = 2*Math.log2(reqAp(L.ev, 100, r.t) / r.N);
+    r.iso = ceilIn(ISO_SERIES, Math.min(100*Math.pow(2,-need), 25600));
+    r.isoHigh = r.iso >= 3200;
+    r.isoOver = r.iso >= 12800;
+    r.tooSlow = true;                      // с рук невозможно в принципе
+    r.handRule = 1/(focal*CROP);
   } else {
     let iso = Math.max(P.baseIso, L.isoMin);
     const focal = lensFocalForCalc(LN);
@@ -690,6 +749,7 @@ let showDense = false;
 let vndCustom = { min:'', max:'' };
 let ledCustom = { k:'', min:'', max:'' };
 let gearSec = null;
+let showAll = false;
 let showManualForm = false;
 let steps = [];
 
@@ -819,7 +879,11 @@ function renderPicker(){
         <div class="fnote">${t().manualNote}</div></div>`;
     }
   } else {
-    html+='<div class="opts">'+S.data.map(o=>{
+    const fits = S.key==='subject' ? (o=>fitSubj(o.id))
+               : S.key==='gear'    ? (o=>o.id==='none'||fitGear(o.id))
+               : (()=>true);
+    const primary = S.data.filter(fits), secondary = S.data.filter(o=>!fits(o));
+    const draw = o=>{
       const isS=S.type==='radio'?sel[S.key]===o.id:sel[S.key].includes(o.id);
       let block=`<div class="opt ${isS?'sel':''}" onclick="pick('${S.key}','${o.id}','${S.type}')">
         <div class="${S.type==='radio'?'radio':'check'}"></div>
@@ -903,25 +967,33 @@ function renderPicker(){
         block += `</div>`;
       }
       return block;
-    }).join('')+'</div>';
+    };
+    html += '<div class="opts">' + primary.map(draw).join('');
+    if(secondary.length){
+      if(showAll){
+        html += `<div class="divider">${appLang==='ru'?'Менее подходящие для этой сцены':'Less suited to this scene'}</div>`
+              + secondary.map(draw).join('');
+      } else {
+        html += `<div class="showall" onclick="revealAll(event)">${appLang==='ru'
+                 ? 'Показать остальные ('+secondary.length+') ▾'
+                 : 'Show the rest ('+secondary.length+') ▾'}</div>`;
+      }
+    }
+    html += '</div>';
   }
   document.getElementById('body').innerHTML=html;
 
   const bot=document.getElementById('bot');
-  if(S.type==='check'){
-    bot.style.display='flex';
-    bot.innerHTML=`<button class="btn btn-sec" onclick="goBack()">${t().back}</button>
-      <button class="btn btn-pri" onclick="goNext()" ${sel[S.key].length?'':'disabled'}>${t().next}</button>`;
-  } else if(S.key==='profile' && sel.profile && sel.profile!=='raw-photo'){
-    bot.style.display='flex';
-    bot.innerHTML=`<button class="btn btn-sec" onclick="goBack()">${t().back}</button>
-      <button class="btn btn-pri" onclick="goNext()">${t().apply}</button>`;
-  } else if(S.type==='lens' && showManualForm){
-    const ok = lensObj()!==null;
-    bot.style.display='flex';
-    bot.innerHTML=`<button class="btn btn-sec" onclick="goBack()">${t().back}</button>
-      <button class="btn btn-pri" onclick="goNext()" ${ok?'':'disabled'}>${t().apply}</button>`;
-  } else { bot.style.display='none'; bot.innerHTML=''; }
+  const back = `<button class="btn btn-sec" onclick="navBack()" ${page===0?'disabled':''}>${t().back}</button>`;
+  let fwd = '';
+  if(S.type==='check')
+    fwd = `<button class="btn btn-pri" onclick="goNext()" ${sel[S.key].length?'':'disabled'}>${t().next}</button>`;
+  else if(S.key==='profile' && sel.profile && sel.profile!=='raw-photo')
+    fwd = `<button class="btn btn-pri" onclick="goNext()">${t().apply}</button>`;
+  else if(S.type==='lens' && showManualForm)
+    fwd = `<button class="btn btn-pri" onclick="goNext()" ${lensObj()?'':'disabled'}>${t().apply}</button>`;
+  bot.style.display='flex';
+  bot.innerHTML = back + fwd;
 }
 
 function renderChips(){
@@ -935,12 +1007,16 @@ function renderChips(){
   else c.style.display='none';
 }
 
+let advTimer = null;
+function cancelAdvance(){ if(advTimer){ clearTimeout(advTimer); advTimer=null; } }
+function scheduleAdvance(){ cancelAdvance(); advTimer = setTimeout(()=>{ advTimer=null; goNext(); }, 180); }
+
 function pick(key,id,type){
   if(type==='radio'){
     sel[key]=id;
     if(key==='profile' && id!=='raw-photo'){ renderPicker(); return; }
-    document.querySelectorAll('.opt').forEach((el,i)=>el.classList.toggle('sel',SCREENS[page].data[i].id===id));
-    setTimeout(goNext,180);
+    renderPicker();           // перерисовать целиком: при фильтрации порядок в DOM не совпадает со списком
+    scheduleAdvance();
   } else {
     const o=GEAR.find(g=>g.id===id);
     if(o&&o.exclusive) sel[key]=sel[key].includes(id)?[]:[id];
@@ -951,10 +1027,9 @@ function pick(key,id,type){
 function pickLens(id){
   sel.lens=id;
   if(id==='manual'){ showManualForm=true; renderPicker(); }
-  else { showManualForm=false;
-    document.querySelectorAll('.opt').forEach((el,i)=>el.classList.toggle('sel',LENSES[i].id===id));
-    setTimeout(goNext,180); }
+  else { showManualForm=false; renderPicker(); scheduleAdvance(); }
 }
+function revealAll(e){ e.stopPropagation(); showAll=true; renderPicker(); }
 function setLed(e,k,v){ e.stopPropagation(); sel[k]=v; renderPicker(); }
 function ledIn(k,v){ ledCustom[k]=v; renderPreview(); }
 function setFps(e,f){ e.stopPropagation(); sel.fps=f; renderPicker(); }
@@ -968,7 +1043,7 @@ function vcIn(k,v){ vndCustom[k]=v; renderPreview(); }
 function mlIn(k,v){ manualLens[k]=v; const bot=document.getElementById('bot');
   const b=bot.querySelector('.btn-pri'); if(b) b.disabled = lensObj()===null; renderPreview(); }
 
-function openSettings(){ prevPage=page; page=99; render(); }
+function openSettings(){ cancelAdvance(); pushGuard(); prevPage=page; page=99; render(); }
 function setAppLang(l){ appLang=l; if(l==='en') camLang='en'; render(); }
 function setCamLang(l){ camLang=l; render(); }
 function closeSettings(){ page=prevPage; if(page===NSCR) steps=buildSteps(); render(); }
@@ -998,11 +1073,13 @@ function renderSettings(){
 }
 
 function goNext(){
+  cancelAdvance(); showAll=false; pushGuard();
   if(page<NSCR-1){page++;render();}
   else if(page===NSCR-1){steps=buildSteps();stepIdx=0;page=NSCR;render();}
   else if(page===NSCR){ stepIdx<steps.length-1?(stepIdx++,render()):(page=NSCR+1,render()); }
 }
 function goBack(){
+  cancelAdvance(); showAll=false;
   if(page===99){closeSettings();return;}
   if(page===NSCR&&stepIdx>0){stepIdx--;render();return;}
   if(page===NSCR){page=NSCR-1;render();return;}
@@ -1029,7 +1106,7 @@ function askReset(){ showModal(t().cfmT,t().cfmS,t().cfmYes,t().cfmNo,reset,null
 function reset(){ page=0; sel={lighting:null,subject:null,lens:null,gear:[],profile:null,ndVario:[],ndFixed:[],fps:25,angle:2,ledKind:'var',ledFix:'k5600',ledVar:'v3256',flMode:'ttl',flRole:'fill',flCurt:'first'};
   manualLens={fMin:'',fMax:'',apMax:''}; showManualForm=false;
   ndSection=null; showDense=false; vndCustom={min:'',max:''}; ledCustom={k:'',min:'',max:''}; gearSec=null;
-  stepIdx=0; prevOpen=false; saveState(); render(); }
+  stepIdx=0; prevOpen=false; showAll=false; saveState(); render(); }
 
 /* ── filters actually in the bag ── */
 function myVnds(){
@@ -1105,7 +1182,9 @@ function ndLabel(){
 
 /* ═════ STEPS ═════ */
 function buildSteps(){
-  const L=L_(),S=S_(),P=P_(),LN=lensObj(),g=sel.gear,v=isVideo(),ru=appLang==='ru';
+  const L=L_(),S=S_(),P=P_();
+  if(!L||!S||!P) return [];
+  const LN=lensObj(),g=sel.gear,v=isVideo(),ru=appLang==='ru';
   const E=computeExposure(); const out=[];
   const row=(k,value,o)=>({n:cm(k),v:value,...o});
 
@@ -1196,10 +1275,14 @@ function buildSteps(){
     if(E.isoUp) warn += (warn?'<br><br>':'') + (ru
       ? `Света не хватает — ISO поднято до ${E.isoUp}.`
       : `Not enough light — ISO raised to ${E.isoUp}.`);
-    if(!E.video&&E.isoHigh&&!E.tooSlow&&!E.isoOver) warn += (warn?'<br><br>':'') + (ru
+    if(!E.video&&E.isoHigh&&!E.tooSlow&&!E.isoOver&&!E.astro) warn += (warn?'<br><br>':'') + (ru
       ? `Чтобы удержать ${fmtShut(E.t)} с рук на этом фокусном, ISO поднято до ${E.iso}. Со штативом можно вернуться к ISO ${Math.max(P.baseIso,L.isoMin)}.`
       : `Holding ${fmtShut(E.t)} handheld pushes ISO to ${E.iso}. On a tripod you can drop back to ISO ${Math.max(P.baseIso,L.isoMin)}.`);
-    if(!E.video&&E.tooSlow) warn += (warn?'<br><br>':'') + (ru
+    if(E.astro){
+      warn += (warn?'<br><br>':'') + (ru
+        ? `Выдержка ${fmtShut(E.t)} посчитана по правилу 500: дольше — и звёзды вытянутся в чёрточки. Штатив обязателен, спуск через автоспуск или пульт. Фокус вручную на бесконечность с увеличением по яркой звезде.`
+        : `${fmtShut(E.t)} comes from the 500 rule: any longer and stars trail. Tripod essential, release via self-timer or remote. Focus manually to infinity, magnified on a bright star.`);
+    } else if(!E.video&&E.tooSlow) warn += (warn?'<br><br>':'') + (ru
       ? `Выдержка ${fmtShut(E.t)} длиннее предела для этого фокусного — нужен упор или штатив.`
       : `${fmtShut(E.t)} is slower than the handheld limit — use support.`);
     if(E.video&&E.needStops>0.4&&!hasFilters()) warn += (warn?'<br><br>':'') + (ru
@@ -1394,6 +1477,10 @@ function buildSteps(){
 }
 
 function renderSteps(){
+  if(!steps || !steps.length){ steps = buildSteps(); }
+  if(!steps.length){ page = NSCR-1; renderPicker(); return; }
+  if(stepIdx < 0) stepIdx = 0;
+  if(stepIdx > steps.length-1) stepIdx = steps.length-1;
   const st=steps[stepIdx];
   document.getElementById('hdrStep').textContent=t().setupTitle;
   document.getElementById('hdrTitle').textContent=t().stepN(stepIdx+1,steps.length);
@@ -1417,7 +1504,7 @@ function renderSteps(){
   if(st.note) h+=`<div class="note">${st.note}</div>`;
   document.getElementById('body').innerHTML=h;
   const bot=document.getElementById('bot'); bot.style.display='flex';
-  bot.innerHTML=`<button class="btn btn-sec" onclick="goBack()">${t().back}</button>
+  bot.innerHTML=`<button class="btn btn-sec" onclick="navBack()">${t().back}</button>
     <button class="btn ${stepIdx===steps.length-1?'btn-ok':'btn-pri'}" onclick="goNext()">
       ${stepIdx===steps.length-1?t().finish:t().nextStep}</button>`;
 }
@@ -1434,7 +1521,7 @@ function renderDone(){
     <div class="fin-t">${t().finTitle}</div><div class="fin-s">${txt(L,0)}<br>${txt(S,0)}</div>
     <div class="sum"><div class="sum-h">${t().sumTitle}</div>${rows}</div></div>`;
   const bot=document.getElementById('bot'); bot.style.display='flex';
-  bot.innerHTML=`<button class="btn btn-sec" onclick="goBack()">${t().backSteps}</button>
+  bot.innerHTML=`<button class="btn btn-sec" onclick="navBack()">${t().backSteps}</button>
     <button class="btn btn-ok" onclick="askReset()">${t().newScen}</button>`;
 }
 
@@ -1466,22 +1553,40 @@ function applyState(d, withProgress){
 
 /* wrap render so every state change is persisted */
 const _render = render;
-render = function(){ _render(); saveState(); syncHistory(); };
+render = function(){
+  try { _render(); }
+  catch(e){
+    /* аварийный откат: возвращаем рабочий экран вместо пустого */
+    try{
+      page = Math.min(page, NSCR-1); stepIdx = 0; steps = [];
+      _render();
+    }catch(e2){}
+  }
+  saveState();
+};
 
 /* ═════ ANDROID BACK BUTTON ═════ */
-let histDepth=0;
-function syncHistory(){
-  try{
-    const want = (page===0 && !document.getElementById('modal').innerHTML) ? 0 : 1;
-    if(want===1 && histDepth===0){ history.pushState({app:1},''); histDepth=1; }
-  }catch(e){}
+/* на каждый шаг вперёд кладём метку в историю; кнопка «Назад» — и системная,
+   и экранная — снимает её через history.back(), поэтому глубины всегда совпадают */
+let guards = 0;
+function pushGuard(){ try{ history.pushState({app:1},''); guards++; }catch(e){} }
+function syncHistory(){}          // больше не нужна, оставлена чтобы не ломать вызовы
+
+let backPending = false;
+function navBack(){
+  if(backPending) return;           // защита от частых тапов: history.back() срабатывает не мгновенно
+  cancelAdvance();
+  if(guards>0){ backPending = true; history.back(); }
+  else { goBack(); }
 }
 try{
   window.addEventListener('popstate', function(){
-    histDepth=0;
+    backPending = false;
+    if(guards>0) guards--;
+    cancelAdvance();
     const m=document.getElementById('modal');
     if(m && m.innerHTML){ closeModal(false); return; }
-    if(page>0 || page===99){ goBack(); }
+    goBack();
   });
 }catch(e){}
 
