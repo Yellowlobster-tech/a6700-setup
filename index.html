@@ -172,10 +172,14 @@
     vertical-align:1px;
   }
   .mrow { padding:14px 15px; display:flex; justify-content:space-between; align-items:center;
-    border-bottom:1px solid #292929; min-height:54px; gap:10px; }
+    border-bottom:1px solid #292929; min-height:54px; gap:4px 10px; flex-wrap:wrap; }
   .mrow:last-child { border-bottom:none; }
-  .mrow .mn { font-size:16.5px; font-weight:600; color:#ccc; }
-  .mrow .mv { font-size:15.5px; color:#8a8a8a; text-align:right; }
+  /* название тянется и переносится, значение прижато вправо и при нехватке места
+     уходит на свою строку, а не наезжает на название */
+  .mrow .mn { font-size:16.5px; font-weight:600; color:#ccc; flex:1 1 auto; min-width:0;
+    overflow-wrap:break-word; }
+  .mrow .mv { font-size:15.5px; color:#8a8a8a; text-align:right; flex:0 1 auto; min-width:0;
+    margin-left:auto; overflow-wrap:anywhere; }
   .mrow.hot { background:linear-gradient(90deg, rgba(255,149,0,.16), rgba(255,149,0,.03));
     border-left:4px solid #ff9500; padding-left:11px; }
   .mrow.hot .mn { color:#fff; font-weight:800; font-size:17.5px; }
@@ -274,6 +278,7 @@
      лого — по центру полосы между последней строкой текста и рамкой */
   .sp-col {
     width:min(calc(100% - 20px), 420px);
+    overflow-y:auto; overscroll-behavior:contain;
     padding-top:calc(max(10px, env(safe-area-inset-top)) + 20px);
     padding-bottom:calc(max(10px, env(safe-area-inset-bottom)) + 3px);
     display:flex; flex-direction:column; align-items:center;
@@ -345,6 +350,10 @@
              border:none; color:#ff9500; font-size:30px; line-height:1; cursor:pointer;
              display:none; font-family:inherit; }
   #splash[data-stage="0"] .sp-act  { display:none; }
+  /* на обложке логотипа нет: на узких экранах он налезал на текст и рамку.
+     Полоса остаётся пустым растяжителем, чтобы текст стоял по центру. */
+  #splash[data-stage="0"] .sp-logoband   { min-height:0; }
+  #splash[data-stage="0"] .sp-logoband > * { display:none; }
   #splash[data-stage="1"] .sp-langs { display:none; }
   #splash[data-stage="1"] .sp-back  { display:block; }
   .sp-inner { width:100%; max-width:440px; padding:0 22px; text-align:center; }
@@ -4938,14 +4947,14 @@ const WIZ_TR = {
       tr:['sahneniz için ayar rehberi','devam etmek için dokunun']
     };
     const VTAG = {
-      ru:'v4.4 · сборка 2026-10-05 · приложение и меню камеры на 8 языках',
-      en:'v4.4 · build 2026-10-05 · app and camera menu in 8 languages',
-      es:'v4.4 · build 2026-10-05 · app y menú de la cámara en 8 idiomas',
-      fr:'v4.4 · build 2026-10-05 · app et menu de l\u2019appareil en 8 langues',
-      de:'v4.4 · Build 2026-10-05 · App und Kameramenü in 8 Sprachen',
-      pt:'v4.4 · build 2026-10-05 · app e menu da câmera em 8 idiomas',
-      it:'v4.4 · build 2026-10-05 · app e menu della fotocamera in 8 lingue',
-      tr:'v4.4 · build 2026-10-05 · uygulama ve kamera menüsü 8 dilde'
+      ru:'v4.5 · сборка 2026-10-05 · приложение и меню камеры на 8 языках',
+      en:'v4.5 · build 2026-10-05 · app and camera menu in 8 languages',
+      es:'v4.5 · build 2026-10-05 · app y menú de la cámara en 8 idiomas',
+      fr:'v4.5 · build 2026-10-05 · app et menu de l\u2019appareil en 8 langues',
+      de:'v4.5 · Build 2026-10-05 · App und Kameramenü in 8 Sprachen',
+      pt:'v4.5 · build 2026-10-05 · app e menu da câmera em 8 idiomas',
+      it:'v4.5 · build 2026-10-05 · app e menu della fotocamera in 8 lingue',
+      tr:'v4.5 · build 2026-10-05 · uygulama ve kamera menüsü 8 dilde'
     };
     const subEl = document.getElementById('spSub');
     const vtagEl = document.getElementById('spVtag');
