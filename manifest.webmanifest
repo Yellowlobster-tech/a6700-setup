@@ -1,0 +1,21 @@
+{
+  "name": "Setup Guide for A6700",
+  "short_name": "A6700 Setup",
+  "description": "Unofficial camera setup guide for the Sony A6700: ready scenarios with the exact camera menu path, a menu search and settings files for the memory card. Works offline.",
+  "id": "/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a1526",
+  "theme_color": "#141414",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["photo", "utilities", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
