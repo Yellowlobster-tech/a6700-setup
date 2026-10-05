@@ -3572,6 +3572,7 @@ const CF_T = {
   reboot:['После подтверждения загрузки камера перезапускается: примерно 10 секунд она выглядит выключенной, экран тёмный. Это нормально — просто подождите.','After you confirm loading, the camera restarts: for about 10 seconds it looks switched off and the screen is dark. This is normal — just wait.','Tras confirmar la carga, la cámara se reinicia: durante unos 10 segundos parece apagada y la pantalla está oscura. Es normal: espere.','Après confirmation du chargement, l\u2019appareil redémarre : pendant environ 10 secondes il semble éteint et l\u2019écran est noir. C\u2019est normal — patientez.','Nach der Bestätigung des Ladens startet die Kamera neu: etwa 10 Sekunden wirkt sie ausgeschaltet, der Bildschirm bleibt dunkel. Das ist normal — einfach warten.','Depois de confirmar o carregamento, a câmera reinicia: por cerca de 10 segundos parece desligada e a tela fica escura. É normal — apenas aguarde.','Dopo aver confermato il caricamento, la fotocamera si riavvia: per circa 10 secondi sembra spenta e lo schermo è buio. È normale — attendi.','Yüklemeyi onayladıktan sonra kamera yeniden başlar: yaklaşık 10 saniye kapalı gibi görünür ve ekran karanlık kalır. Bu normaldir — bekleyin.'],
   slots:['Номер 01–10. Файл с этим номером заменит такой же файл на карте.','Number 01–10. A file with this number replaces the same file on the card.','Número 01–10. Un archivo con este número sustituye al que ya esté en la tarjeta.','Numéro 01–10. Un fichier portant ce numéro remplace celui déjà présent sur la carte.','Nummer 01–10. Eine Datei mit dieser Nummer ersetzt die vorhandene auf der Karte.','Número 01–10. Um arquivo com este número substitui o que já está no cartão.','Numero 01–10. Un file con questo numero sostituisce quello già presente sulla scheda.','Numara 01–10. Bu numaralı dosya, karttaki aynı numaralı dosyanın yerine geçer.'],
   save:['Сохранить как','Save as','Guardar como','Enregistrer sous','Speichern als','Salvar como','Salva come','Farklı kaydet'],
+  phoneCard:['На телефоне файл сохранится в «Загрузки». Чтобы он попал на камеру, подключите картридер к телефону по USB-C и скопируйте файл в эту папку на карте — или перенесите файл на компьютер.','On a phone the file goes to Downloads. To get it onto the camera, plug a card reader into the phone over USB-C and copy the file into that folder on the card — or move the file to a computer.','En el móvil el archivo va a «Descargas». Para llevarlo a la cámara, conecte un lector de tarjetas por USB-C y copie el archivo a esa carpeta de la tarjeta, o pase el archivo al ordenador.','Sur un téléphone, le fichier va dans « Téléchargements ». Pour l’amener à l’appareil, branchez un lecteur de cartes en USB-C et copiez le fichier dans ce dossier de la carte, ou transférez le fichier sur un ordinateur.','Auf dem Handy landet die Datei in „Downloads“. Um sie auf die Kamera zu bringen, schließen Sie einen Kartenleser per USB-C an und kopieren Sie die Datei in diesen Ordner auf der Karte — oder übertragen Sie die Datei auf einen Computer.','No celular o arquivo vai para «Downloads». Para levá-lo à câmera, conecte um leitor de cartões por USB-C e copie o arquivo para essa pasta no cartão, ou passe o arquivo para um computador.','Sul telefono il file finisce in «Download». Per portarlo sulla fotocamera, collega un lettore di schede via USB-C e copia il file in quella cartella sulla scheda, oppure trasferisci il file su un computer.','Telefonda dosya «İndirilenler» klasörüne iner. Kameraya aktarmak için telefona USB-C ile kart okuyucu bağlayıp dosyayı karttaki o klasöre kopyalayın veya dosyayı bilgisayara taşıyın.'],
   after:['Скопируйте файл на карту в PRIVATE/SONY/SETTING/6700/CAMSET и загрузите на камере ({p}). Оригинал файла сохраните отдельно.','Copy the file to PRIVATE/SONY/SETTING/6700/CAMSET on the card and load it on the camera ({p}). Keep the original file separately.','Copie el archivo en PRIVATE/SONY/SETTING/6700/CAMSET de la tarjeta y cárguelo en la cámara ({p}). Guarde aparte el original.','Copiez le fichier dans PRIVATE/SONY/SETTING/6700/CAMSET sur la carte et chargez-le dans l’appareil ({p}). Gardez l’original à part.','Kopieren Sie die Datei nach PRIVATE/SONY/SETTING/6700/CAMSET auf der Karte und laden Sie sie in der Kamera ({p}). Bewahren Sie das Original separat auf.','Copie o arquivo para PRIVATE/SONY/SETTING/6700/CAMSET no cartão e carregue-o na câmera ({p}). Guarde o original à parte.','Copia il file in PRIVATE/SONY/SETTING/6700/CAMSET sulla scheda e caricalo sulla fotocamera ({p}). Conserva l’originale a parte.','Dosyayı kartta PRIVATE/SONY/SETTING/6700/CAMSET klasörüne kopyalayın ve kamerada yükleyin ({p}). Orijinal dosyayı ayrıca saklayın.'],
   wbNote:['Кельвины действуют, если в камере выбран баланс белого «Цв.темп./Фильтр».','The Kelvin value applies when the camera white balance is set to Color Temp./Filter.','El valor en Kelvin se aplica si el balance de blancos está en Temp. color/Filtro.','La valeur en Kelvin s’applique si la balance des blancs est sur Temp. couleur/Filtre.','Der Kelvin-Wert gilt, wenn der Weißabgleich auf Farbtemp./Filter steht.','O valor em Kelvin vale se o balanço de branco estiver em Temp. cor/Filtro.','Il valore in Kelvin vale se il bilanciamento del bianco è su Temp. colore/Filtro.','Kelvin değeri, beyaz dengesi Renk sıcaklığı/Filtre iken geçerlidir.'],
   fISO:['ISO','ISO','ISO','ISO','ISO','ISO','ISO','ISO'],
@@ -3876,6 +3877,8 @@ function renderCamFile(){
         <div class="my-note">${esc(cft('slots'))}</div>
         <div class="bkp" style="padding-top:10px"><button class="btn btn-pri" id="cfSave" onclick="cfSave()">⤓ ${esc(cft('save'))} CAMSET${esc(cfNum)}.DAT</button></div>
         <div class="sect-note">${esc(cft('after').replace('{p}',path))}</div>
+        ${(window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+            ? `<div class="sect-note">${esc(cft('phoneCard'))}</div>` : ''}
         <div class="sect-note">${esc(cft('reboot'))}</div>`;
     }
   }
@@ -4947,14 +4950,14 @@ const WIZ_TR = {
       tr:['sahneniz için ayar rehberi','devam etmek için dokunun']
     };
     const VTAG = {
-      ru:'v4.5 · сборка 2026-10-05 · приложение и меню камеры на 8 языках',
-      en:'v4.5 · build 2026-10-05 · app and camera menu in 8 languages',
-      es:'v4.5 · build 2026-10-05 · app y menú de la cámara en 8 idiomas',
-      fr:'v4.5 · build 2026-10-05 · app et menu de l\u2019appareil en 8 langues',
-      de:'v4.5 · Build 2026-10-05 · App und Kameramenü in 8 Sprachen',
-      pt:'v4.5 · build 2026-10-05 · app e menu da câmera em 8 idiomas',
-      it:'v4.5 · build 2026-10-05 · app e menu della fotocamera in 8 lingue',
-      tr:'v4.5 · build 2026-10-05 · uygulama ve kamera menüsü 8 dilde'
+      ru:'v4.6 · сборка 2026-10-05 · приложение и меню камеры на 8 языках',
+      en:'v4.6 · build 2026-10-05 · app and camera menu in 8 languages',
+      es:'v4.6 · build 2026-10-05 · app y menú de la cámara en 8 idiomas',
+      fr:'v4.6 · build 2026-10-05 · app et menu de l\u2019appareil en 8 langues',
+      de:'v4.6 · Build 2026-10-05 · App und Kameramenü in 8 Sprachen',
+      pt:'v4.6 · build 2026-10-05 · app e menu da câmera em 8 idiomas',
+      it:'v4.6 · build 2026-10-05 · app e menu della fotocamera in 8 lingue',
+      tr:'v4.6 · build 2026-10-05 · uygulama ve kamera menüsü 8 dilde'
     };
     const subEl = document.getElementById('spSub');
     const vtagEl = document.getElementById('spVtag');
