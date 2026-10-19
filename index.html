@@ -2776,6 +2776,7 @@ function goBack(){
     page = (typeof termsPrev==='number' && termsPrev!==92) ? termsPrev : 0;
     if(f==='splash'){ goSplash(1); return; }
     render(); return; }
+  if(page===94){ try{ natSnapClear(); }catch(e){} }   /* §65: ушли с экрана записи сами — кнопка «Продолжить» не нужна */
   if(page===94 && cfFrom==='done'){ cfFrom=''; page=NSCR+1; render(); return; }
   if(page===91){ page = sheetPrev; render(); return; }
   if(page===94||page===95){ page=99; render(); return; }
@@ -4156,7 +4157,14 @@ const NAT_T = {
   verify: ['проверка чтением не совпала','read-back check failed','la verificación por lectura falló','la vérification par relecture a échoué','Prüfung durch Rücklesen fehlgeschlagen','a verificação por leitura falhou','verifica in lettura non riuscita','geri okuma kontrolü başarısız','weryfikacja odczytem nie powiodła się'],
   lost:   ['Папка на карте недоступна (карта не вставлена, кардридер отключён или карту отформатировали) — вставьте карту или нажмите «Сменить папку на карте»','The card folder is unavailable (card not inserted, reader unplugged or card reformatted) — insert the card or tap “Change folder on the card”','La carpeta de la tarjeta no está disponible (tarjeta no insertada, lector desconectado o tarjeta formateada): inserte la tarjeta o pulse «Cambiar carpeta en la tarjeta»','Le dossier de la carte est indisponible (carte absente, lecteur débranché ou carte reformatée) — insérez la carte ou touchez « Changer de dossier sur la carte »','Der Kartenordner ist nicht erreichbar (Karte nicht eingesteckt, Leser getrennt oder Karte formatiert) – Karte einstecken oder „Ordner auf der Karte ändern“ tippen','A pasta do cartão está indisponível (cartão não inserido, leitor desligado ou cartão formatado) — insira o cartão ou toque em «Mudar pasta no cartão»','La cartella della scheda non è disponibile (scheda non inserita, lettore scollegato o scheda formattata): inserisci la scheda o tocca «Cambia cartella sulla scheda»','Karttaki klasöre erişilemiyor (kart takılı değil, okuyucu çıkarıldı veya kart biçimlendirildi) — kartı takın ya da «Karttaki klasörü değiştir»e dokunun','Folder na karcie jest niedostępny (brak karty, odłączony czytnik lub sformatowana karta) — włóż kartę albo stuknij „Zmień folder na karcie”']
 };
-NAT_T.resumed = ['Пока была открыта папка на карте, Android перезапустил приложение — результат записи неизвестен. Проверьте карту или запишите ещё раз.',
+NAT_T.contBtn = ['Продолжить: меню записи на карту','Continue: write-to-card menu','Continuar: menú de grabación en la tarjeta','Continuer : menu d’écriture sur la carte','Weiter: Menü „Auf Karte schreiben“','Continuar: menu de gravação no cartão','Continua: menu di scrittura sulla scheda','Devam: karta yazma menüsü','Kontynuuj: menu zapisu na kartę'];
+/* §65 (v6.7ar): порядок для Android — сначала картридер и режим USB «передача файлов», потом слот и запись */
+NAT_T.usbH = ['Сначала — картридер','First: the card reader','Primero: el lector de tarjetas','D’abord : le lecteur de cartes','Zuerst: der Kartenleser','Primeiro: o leitor de cartões','Prima: il lettore di schede','Önce: kart okuyucu','Najpierw: czytnik kart'];
+NAT_T.usb1 = ['Подключите картридер с картой к телефону ДО записи — не в процессе.','Connect the card reader with the card to the phone BEFORE writing, not during it.','Conecte el lector con la tarjeta al teléfono ANTES de grabar, no durante.','Branchez le lecteur avec la carte au téléphone AVANT l’écriture, pas pendant.','Schließen Sie den Kartenleser mit der Karte VOR dem Schreiben an das Telefon an, nicht währenddessen.','Conecte o leitor com o cartão ao telefone ANTES de gravar, não durante.','Collega il lettore con la scheda al telefono PRIMA della scrittura, non durante.','Kartlı kart okuyucuyu telefona yazmadan ÖNCE bağlayın, yazma sırasında değil.','Podłącz czytnik z kartą do telefonu PRZED zapisem, nie w trakcie.'];
+NAT_T.usb2 = ['Убедитесь, что USB работает в режиме передачи файлов, а не только зарядки: если телефон спросит (в шторке уведомлений), выберите передачу файлов.','Make sure USB is set to file transfer, not charging only: if the phone asks (in the notification panel), choose file transfer.','Compruebe que el USB está en modo de transferencia de archivos y no solo de carga: si el teléfono lo pregunta (en el panel de notificaciones), elija transferencia de archivos.','Vérifiez que l’USB est en mode transfert de fichiers et pas seulement en recharge : si le téléphone le demande (volet des notifications), choisissez le transfert de fichiers.','Prüfen Sie, dass USB auf Dateiübertragung steht und nicht nur auf Laden: Fragt das Telefon (in der Benachrichtigungsleiste), wählen Sie Dateiübertragung.','Verifique se o USB está em transferência de arquivos, e não só carregamento: se o telefone perguntar (no painel de notificações), escolha transferência de arquivos.','Verifica che l’USB sia in trasferimento file e non solo ricarica: se il telefono lo chiede (nel pannello notifiche), scegli il trasferimento file.','USB’nin yalnızca şarj değil, dosya aktarımı modunda olduğundan emin olun: telefon sorarsa (bildirim panelinde) dosya aktarımını seçin.','Upewnij się, że USB działa w trybie przesyłania plików, a nie tylko ładowania: jeśli telefon zapyta (w panelu powiadomień), wybierz przesyłanie plików.'];
+NAT_T.usb3 = ['Затем выберите слот и нажмите кнопку записи — при первой записи откроется выбор папки CAMSET на карте.','Then choose the slot and tap the save button — the first time, a picker for the CAMSET folder on the card opens.','Después elija la ranura y pulse el botón de guardar; la primera vez se abrirá la selección de la carpeta CAMSET de la tarjeta.','Choisissez ensuite l’emplacement et touchez le bouton d’enregistrement — la première fois, le choix du dossier CAMSET de la carte s’ouvre.','Wählen Sie dann den Slot und tippen Sie auf Speichern — beim ersten Mal öffnet sich die Auswahl des Ordners CAMSET auf der Karte.','Depois escolha o slot e toque no botão de gravar — na primeira vez abre a escolha da pasta CAMSET no cartão.','Poi scegli lo slot e tocca il pulsante di salvataggio — la prima volta si apre la scelta della cartella CAMSET sulla scheda.','Ardından slotu seçip kaydet düğmesine dokunun — ilk seferde karttaki CAMSET klasörünün seçimi açılır.','Następnie wybierz slot i stuknij przycisk zapisu — za pierwszym razem otworzy się wybór folderu CAMSET na karcie.'];
+NAT_T.contHint = ['Если вы выходили из приложения для настройки USB, вернитесь и нажмите «Продолжить: меню записи на карту».','If you left the app to set up USB, come back and tap “Continue: write-to-card menu”.','Si salió de la app para configurar el USB, vuelva y pulse «Continuar: menú de grabación en la tarjeta».','Si vous avez quitté l’app pour régler l’USB, revenez et touchez « Continuer : menu d’écriture sur la carte ».','Wenn Sie die App verlassen haben, um USB einzustellen, kehren Sie zurück und tippen Sie auf „Weiter: Menü ‚Auf Karte schreiben‘“.','Se saiu do app para configurar o USB, volte e toque em «Continuar: menu de gravação no cartão».','Se sei uscito dall’app per impostare l’USB, torna e tocca «Continua: menu di scrittura sulla scheda».','USB ayarı için uygulamadan çıktıysanız geri dönüp «Devam: karta yazma menüsü»ne dokunun.','Jeśli wyszedłeś z aplikacji, aby ustawić USB, wróć i stuknij „Kontynuuj: menu zapisu na kartę”.'];
+NAT_T.resumed = ['Приложение было закрыто, пока была открыта папка на карте, — результат записи неизвестен. Проверьте карту или запишите ещё раз.',
   'Android restarted the app while the card folder was open — the write result is unknown. Check the card or write again.',
   'Android reinició la app mientras estaba abierta la carpeta de la tarjeta: se desconoce el resultado. Revise la tarjeta o grabe de nuevo.',
   'Android a redémarré l’app pendant que le dossier de la carte était ouvert — résultat de l’écriture inconnu. Vérifiez la carte ou réécrivez.',
@@ -4168,7 +4176,19 @@ NAT_T.resumed = ['Пока была открыта папка на карте, A
 /* §63 (v6.7aq): снимок состояния перед системным окном (SAF-пикер, «Сохранить как…», печать). Если Android пересоздал Activity
    (подключение USB-картридера, смена конфигурации, нехватка памяти) — при запуске resumeAfterNative() возвращает на ту же страницу
    (итог / запись на карту) с тем же сценарием, слотом и шпаргалкой, минуя заставку. Нормальный возврат — снимок стирается. */
-const NAT_SNAP = 'a6700-native-resume';
+const NAT_SNAP = 'a6700-native-resume', NAT_SNAP_TTL = 24*60*60*1000;
+/* §65 (v6.7ar): есть ли снимок записи на карту (моложе 24 ч) — тогда на заставке кнопка «Продолжить: меню записи» */
+/* §65: блок «Сначала — картридер» (Android): итоговое меню «Сохранить на карту» и экран записи — первым, до слота */
+function natUsbHtml(id){
+  return `<div class="sect-h">${esc(natT('usbH'))}</div><div class="howto" id="${id}">
+        <div class="howto-i"><span class="howto-n">1</span><span>${esc(natT('usb1'))}</span></div>
+        <div class="howto-i"><span class="howto-n">2</span><span>${esc(natT('usb2'))}</span></div>
+        <div class="howto-i"><span class="howto-n">3</span><span>${esc(natT('usb3'))}</span></div>
+      </div><div class="sect-note">${esc(natT('contHint'))}</div>`;
+}
+function natResumeAvail(){
+  try{ const d = JSON.parse(localStorage.getItem(NAT_SNAP)||'null'); return !!(d && d.kind==='write' && d.t && Date.now()-d.t <= NAT_SNAP_TTL); }catch(e){ return false; }
+}
 function natSnap(kind){
   try{
     const d = { v:1, kind, t:Date.now(), appLang, camLang, sel, manualLens, vndCustom, ledCustom, page, stepIdx, showManualForm, activeScen, lensSkipped };
@@ -4183,13 +4203,20 @@ function resumeAfterNative(){
   let d = null;
   try{ d = JSON.parse(localStorage.getItem(NAT_SNAP)||'null'); }catch(e){}
   natSnapClear();
-  if(!d || !d.t || Date.now()-d.t > 30*60*1000) return false;      /* старый снимок (больше 30 мин) — обычный запуск */
+  if(!d || !d.t || Date.now()-d.t > NAT_SNAP_TTL) return false;      /* снимок старше 24 ч — обычный запуск */
   try{
     applyState(d, true);
     try{ if(d.SHEET) SHEET = d.SHEET; if(d.doneFlow) doneFlow = d.doneFlow; doneSlot = d.doneSlot||null; doneScroll = d.doneScroll||0; }catch(e){}
     try{ if(typeof cfSel!=='undefined' && d.cfSel) cfSel = d.cfSel; if(typeof cfMore!=='undefined') cfMore = !!d.cfMore; cfFrom = d.cfFrom||''; }catch(e){}
     try{ if(typeof sheetPrev!=='undefined' && typeof d.sheetPrev==='number') sheetPrev = d.sheetPrev; }catch(e){}
     try{ cfMsg = (d.kind==='write' && page===94) ? natT('resumed') : ''; }catch(e){}
+    /* если запись на самом деле прошла (нативная часть помнит последнюю удачную) — так и пишем */
+    try{ const P = natPlug('SafFiles');
+      if(P && d.kind==='write') P.getLastWrite().then(w=>{
+        if(w && w.t && w.t >= d.t && w.names && w.names.length && page===94){
+          cfMsg = w.names.join(', ')+' — '+cft(w.names.length>1?'savedN':'saved')+(w.verified?' ✓':' · '+natT('verify'));
+          renderCamFile();
+        } }).catch(()=>{}); }catch(e){}
     const sp = document.getElementById('splash');
     if(sp){ sp.className = 'gone'; sp.style.display = 'none'; }
     pushGuard(); if(page===94 || page===91) pushGuard();             /* «Назад»: запись/шпаргалка → итог → шаги */
@@ -4203,27 +4230,34 @@ try{ document.addEventListener('click', e=>{ const el = e.target; if(isNative() 
 /* «Сохранить как…» для одного файла (копия данных JSON) */
 async function natSaveAs(name, u8, mime){
   const P = natPlug('SafFiles'); if(!P) throw new Error('SafFiles plugin missing');
-  natSnap('save');
-  try{ return await P.saveAs({ name, mime: mime||'application/octet-stream', data: natB64(u8) }); }
-  finally{ natSnapClear(); }
+  /* §65: данные не идут в вызов, который открывает системное окно (иначе Bundle > 1 МБ и падение процесса) */
+  const r = await P.saveAs({ name, mime: mime||'application/octet-stream' });
+  if(!r || !r.uri) return { saved:false };
+  return await P.writeDoc({ uri: r.uri, data: natB64(u8) });
 }
 /* запись нескольких файлов в папку на карте; при первом разе — пояснение и выбор папки */
 async function natWriteFolder(files, forcePick){
   const P = natPlug('SafFiles'); if(!P) throw new Error('SafFiles plugin missing');
+  const fail = e=>{
+    const code = e && e.code;
+    if(code==='CANCELLED' || /cancel/i.test(String(e && e.message))) return { cancelled:true };
+    if(code==='ACCESS_LOST' || code==='FOLDER_UNAVAILABLE' || code==='NO_FOLDER') return { error: natT('lost') };
+    return { error: String(e && e.message || e) };
+  };
+  natSnap('write');      /* §65: снимок ДО выбора папки и записи; стирается только после удачной записи */
   let f = {}; try{ f = await P.getFolder(); }catch(e){}
   if(!f.uri || forcePick){
     const go = await new Promise(res=>showModal(esc(natT('pickH')), esc(natT('pickB')), esc(natT('go')), R('Отмена','Cancel'), ()=>res(true), ()=>res(false)));
-    if(!go) return { cancelled:true };
+    if(!go){ natSnapClear(); return { cancelled:true }; }   /* отказ в окне приложения — снимок не нужен */
+    natSnap('write');
+    /* выбор папки — отдельным лёгким вызовом без данных файлов (см. SafFilesPlugin, §65) */
+    try{ f = await P.pickFolder(); }catch(e){ return fail(e); }
   }
-  natSnap('write');
   try{
-    return await P.writeFiles({ files: files.map(x=>({ name:x.name, data:natB64(x.u8) })), pick: !f.uri || !!forcePick });
-  }catch(e){
-    const code = e && e.code;
-    if(code==='CANCELLED' || /cancel/i.test(String(e && e.message))) return { cancelled:true };
-    if(code==='ACCESS_LOST' || code==='FOLDER_UNAVAILABLE') return { error: natT('lost') };
-    return { error: String(e && e.message || e) };
-  }finally{ natSnapClear(); }
+    const r = await P.writeFiles({ files: files.map(x=>({ name:x.name, data:natB64(x.u8) })) });
+    if(r && r.written && r.written.length) natSnapClear();
+    return r;
+  }catch(e){ return fail(e); }
 }
 /* текст результата записи для строки статуса */
 function natFolderNote(r){
@@ -4235,9 +4269,7 @@ function natFolderNote(r){
 }
 async function natPrint(name){
   const P = natPlug('SafFiles'); if(!P) throw new Error('SafFiles plugin missing');
-  natSnap('print');
-  try{ return await P.printPage({ name: name||'Sony A6700 Setup' }); }
-  finally{ natSnapClear(); }
+  return await P.printPage({ name: name||'Sony A6700 Setup' });
 }
 /* активные сценарии демо: режим → пары [освещение, сюжет]; объектив, оснащение, фильтры, профиль — свободно */
 const DEMO_OK = { photo:[['sun-hard','landscape'],['sun-soft','portrait']],
@@ -4470,7 +4502,9 @@ function doneAct(k, inPlace){
     body = sc ? `<div style="padding:0 18px">${scenSaveHtml()}</div>` : P(R('В следующий раз — запуск одним нажатием, сразу к шагам','Next time — one tap, straight to the steps')) + BTN(ovrT('dnB2'),"saveScen();doneAct('scen',true)",true);
   } else if(k==='card'){
     title = ovrT('dnB3');
-    body = `<div class="sect-h" style="padding:6px 18px 0">${esc(ovrT('dnSlotH'))}</div>` + doneSlotChips() + P(esc(ovrT('dnSlotN')));
+    if(isNative() && isPro()) natSnap('write');   /* §65: если уйдут настраивать USB — на заставке будет «Продолжить» */
+    body = (isNative() && isPro() ? `<div style="padding:6px 18px 0">${natUsbHtml('dnUsb')}</div>` : '')
+         + `<div class="sect-h" style="padding:6px 18px 0">${esc(ovrT('dnSlotH'))}</div>` + doneSlotChips() + P(esc(ovrT('dnSlotN')));
     body += isPro() ? (doneSlot ? BTN(ovrT('dnGoCard'),"doneGo(openCamFile)",true) : P('<b>'+esc(ovrT('dnNeedSlot'))+'</b>'))
                     : P(esc(ovrT('demoNote')));
   } else if(k==='file'){
@@ -6433,7 +6467,7 @@ const AB_T = {
 function abx(k){ const a=AB_T[k]||[]; const i=['ru','en','es','fr','de','pt','it','tr','pl'].indexOf(appLang); return a[i<0?1:i] || a[1]; }
 try{ document.getElementById('sideLogo').innerHTML = LOGO_SVG; }catch(e){}
 try{ document.getElementById('spBgLogo').innerHTML = LOGO_SVG; }catch(e){}   /* A11: бледный логотип (≈6%, круглая маска) */
-const APP_VER = 'v6.7aq';          /* внутренняя рабочая версия: HANDOVER/ПАКЕТ/архив/тесты — пользователю не показывается */
+const APP_VER = 'v6.7ar';          /* внутренняя рабочая версия: HANDOVER/ПАКЕТ/архив/тесты — пользователю не показывается */
 const APP_VER_PUBLIC = 'V6700.1.0';  /* публичный номер (виден пользователю): V<модель>.<мажор>.<минор>, меняется по решению Igor */
 const APP_MAIL = 'hello@yellowlobsterstudio.com';
 
@@ -7966,9 +8000,12 @@ const WIZ_PL = {
   } else {
     html += `<button class="sp-btn primary" id="spNew">${esc(spT('start'))}</button>`;
   }
+  try{ if(natResumeAvail()) html = `<button class="sp-btn primary" id="spCamRes">${esc(natT('contBtn'))}</button><div class="sp-note" id="spCamHint">${esc(natT('contHint'))}</div>` + html.replace('sp-btn primary','sp-btn ghost'); }catch(e){}
   html = splashExtra(html, has);
   box.innerHTML = html;
 
+  const camRes = document.getElementById('spCamRes');
+  if (camRes) camRes.addEventListener('click', e => { e.stopPropagation(); if(!resumeAfterNative()) window.splashBuild(); });
   const resume = document.getElementById('spResume');
   if (resume) resume.addEventListener('click', e => {
     e.stopPropagation(); applyState(saved, true); render(); close();
@@ -7991,7 +8028,8 @@ const WIZ_PL = {
   };
   window.splashBuild();
   render();          // рисуем приложение под заставкой
-  try{ resumeAfterNative(); }catch(e){}   /* §63: возврат после пересоздания Activity Android */
+  /* §65: вместо автоматического возврата (§63) — кнопка «Продолжить: меню записи» на заставке (см. splashBuild) */
+  try{ if(natResumeAvail()) splashStage(1); }catch(e){}
 })();
 
 
