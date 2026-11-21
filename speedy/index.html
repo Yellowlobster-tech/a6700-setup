@@ -3044,9 +3044,13 @@ function ttsMode(){
   if (cfg.tts === "auto") return cfg.key ? "gemini" : "browser";
   return cfg.tts;
 }
-let gemTtsCooldown = 0;
+let gemTtsCooldown = 0, gemTtsErr = "";
+const TTS_CACHE = new Map();   // одинаковые фразы (приветствия) не тратят лимит повторно
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function speakGemini(text, token){
   if (!cfg.key) throw new Error("нет ключа");
+  const ck = CH().title + "|" + (cfg.gemVoice || "Puck") + "|" + text;
+  if (TTS_CACHE.has(ck)){ await playBuffer(TTS_CACHE.get(ck), token); return; }
   const models = [cfg.ttsModel || TTS_MODELS[0], ...TTS_MODELS.filter(m => m !== cfg.ttsModel)];
   let data, lastErr;
   for (const model of models){
@@ -3058,7 +3062,21 @@ async function speakGemini(text, token){
         generation_config: { speech_config: [{ voice: cfg.gemVoice || "Puck" }] }
       });
       break;
-    } catch(e){ lastErr = e; data = null; if (e.status !== 404 && e.status !== 400) break; }
+    } catch(e){ lastErr = e; data = null; if (e.status !== 404 && e.status !== 400 && e.status !== 429 && e.status !== 503 && e.status !== 500) break; }
+  }
+  if (!data && lastErr && (lastErr.status === 429 || lastErr.status === 503) && token === speakToken){
+    // короткий лимит «в минуту»: подождать и попробовать ещё раз
+    const m = /retry in ([\d.]+)s/i.exec(lastErr.message || ""); const wait = m ? Math.ceil(parseFloat(m[1]))*1000 : 6000;
+    if (wait <= 25000){
+      await sleep(wait + 300);
+      if (token !== speakToken) return;
+      try { data = await interactions({
+        model: cfg.ttsModel || TTS_MODELS[0], store: false,
+        input: [{ type: "user_input", content: [{ type: "text", text, annotations: [{ type: "speech_metadata", style: CH().style }] }] }],
+        response_format: { type: "audio", mime_type: "audio/l16", sample_rate: 24000 },
+        generation_config: { speech_config: [{ voice: cfg.gemVoice || "Puck" }] } }); }
+      catch(e){ lastErr = e; }
+    }
   }
   if (!data){ const e = new Error("Gemini TTS " + (lastErr ? lastErr.message : "")); e.status = lastErr && lastErr.status; throw e; }
   const aud = stepsOf(data, "audio").pop();
@@ -3074,6 +3092,8 @@ async function speakGemini(text, token){
   if (audioCtx.state === "suspended") await audioCtx.resume();
   const buf = audioCtx.createBuffer(1, n, rate), ch = buf.getChannelData(0);
   for (let i = 0; i < n; i++){ let v = bin.charCodeAt(off+2*i) | (bin.charCodeAt(off+2*i+1) << 8); if (v >= 32768) v -= 65536; ch[i] = v / 32768; }
+  if (TTS_CACHE.size > 40) TTS_CACHE.delete(TTS_CACHE.keys().next().value);
+  TTS_CACHE.set(ck, buf); gemTtsErr = "";
   await playBuffer(buf, token);
 }
 async function playBuffer(buf, token){
@@ -3100,8 +3120,9 @@ async function say(text, {listenAfter = true} = {}){
       try { await speakGemini(text, token); }
       catch(e){
         console.warn(e);
-        if (e.status === 429){ gemTtsCooldown = Date.now() + 10*60*1000; toast("Лимит живого голоса Gemini исчерпан, пока говорю голосом браузера.", 5000); }
-        else toast("Живой голос не сработал (" + (e.message||e) + "), говорю голосом браузера.", 5000);
+        gemTtsErr = String(e.message || e);
+        if (e.status === 429){ gemTtsCooldown = Date.now() + 60*1000; toast("Лимит живого голоса Gemini: " + gemTtsErr.slice(0, 220), 9000); }
+        else toast("Живой голос не сработал (" + gemTtsErr.slice(0, 200) + "), говорю голосом браузера.", 8000);
         if (token === speakToken){ setState("speaking"); await speakBrowser(text, token); }
       }
     } else if (mode === "google" && (cfg.ttsKey || cfg.key)){
