@@ -3032,9 +3032,10 @@ async function handleUser(text, quick){
   setState("thinking");
   const started = performance.now();
   let reply = "";
+  const el0 = document.getElementById("errLine"); if (el0) el0.textContent = "";
   if (cfg.key){
     try { reply = await askGemini(text); }
-    catch(e){ console.warn(e); toast("Умный режим недоступен: " + (e.message||e) + ". Включаю демо-режим.", 5000); reply = ""; }
+    catch(e){ console.warn(e); lastGemErr = String(e.message||e); showErr("Gemini: " + lastGemErr); reply = ""; }
   }
   if (!reply) reply = demoBrain(text, quick);
   const wait = 600 - (performance.now() - started);
@@ -3059,7 +3060,12 @@ function stepsOf(data, type){
   (data.steps || []).forEach(st => { if (st.type === "model_output" || !st.type) (st.content || []).forEach(c => { if (c.type === type) out.push(c); }); });
   return out;
 }
-let lastInteractionId = null;
+let lastInteractionId = null, lastGemErr = "";
+function showErr(msg){
+  let el = document.getElementById("errLine");
+  if (!el){ el = document.createElement("div"); el.id = "errLine"; el.style.cssText = "font-size:12px;color:#c62828;margin-top:4px"; document.getElementById("bubble").appendChild(el); }
+  el.textContent = "Демо-ответ, умный режим не сработал. " + msg;
+}
 async function askGemini(text){
   const models = [cfg.model || DEFAULT_MODEL, ...FALLBACK_MODELS.filter(m => m !== cfg.model)];
   let lastErr;
@@ -3075,7 +3081,7 @@ async function askGemini(text){
       return out || "Ой, давай лучше поиграем во что-нибудь весёлое! Хочешь загадку или сказку?";
     } catch(e){
       lastErr = e;
-      if (!(e.status === 404 || (e.status === 400 && /model/i.test(e.message)))) break;
+      if (e.status === 401 || (e.status === 403 && /key|denied|permission/i.test(e.message) && !/model/i.test(e.message))) break;
     }
   }
   throw lastErr;
@@ -3088,7 +3094,7 @@ async function geminiCall(model, _contents){
       const data = await interactions({ model: m, system_instruction: SYSTEM_PROMPT, input: "Поздоровайся одним коротким предложением.", store: false });
       if (m !== cfg.model){ cfg.model = m; saveCfg(); }
       return (data.output_text || stepsOf(data, "text").map(c => c.text || "").join(" ")).trim();
-    } catch(e){ lastErr = e; if (!(e.status === 404 || (e.status === 400 && /model/i.test(e.message)))) break; }
+    } catch(e){ lastErr = e; if (e.status === 401 || (e.status === 403 && /key|denied|permission/i.test(e.message) && !/model/i.test(e.message))) break; }
   }
   throw lastErr;
 }
