@@ -2644,8 +2644,8 @@ var qrcode = function() {
 <script>
 "use strict";
 /* ================== НАСТРОЙКИ ================== */
-const DEFAULT_MODEL = "gemini-4-hydrogen";
-const FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-flash-latest"];
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";   // самая быстрая: ребёнку важен быстрый ответ
+const FALLBACK_MODELS = ["gemini-flash-latest", "gemini-4-hydrogen"];
 const TTS_MODELS = ["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"];
 const CFG_KEY = "speedy_cfg_v1";
 const cfg = Object.assign({
@@ -2654,6 +2654,7 @@ const cfg = Object.assign({
   pitch: 1.25, rate: 1.0, autoListen: true
 }, loadCfg());
 if ((cfg.cfgVer||0) < 3){ cfg.tts = "auto"; cfg.model = DEFAULT_MODEL; cfg.ttsModel = TTS_MODELS[0]; cfg.cfgVer = 3; }
+if ((cfg.cfgVer||0) < 4){ cfg.model = DEFAULT_MODEL; cfg.cfgVer = 4; }
 const TTS_STYLE_RU = "Озвучь по-русски голосом весёлого, доброго мультяшного ёжика-сказочника, который говорит с маленькой девочкой. Говори живо и тепло, с улыбкой в голосе, с выразительными сказочными интонациями, как в хорошей детской аудиосказке: вопросы звучат с интересом, восклицания радостно, перед загадкой небольшая таинственная пауза. Текст:";
 const TTS_STYLE = "cheerful, warm and playful cartoon storyteller talking to a small child, expressive fairy-tale intonation, smiling voice, lively but clear";
 function loadCfg(){ try { return JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch(e){ return {}; } }
@@ -3067,7 +3068,7 @@ async function speakGemini(text, token){
   if (!data && lastErr && (lastErr.status === 429 || lastErr.status === 503) && token === speakToken){
     // короткий лимит «в минуту»: подождать и попробовать ещё раз
     const m = /retry in ([\d.]+)s/i.exec(lastErr.message || ""); const wait = m ? Math.ceil(parseFloat(m[1]))*1000 : 6000;
-    if (wait <= 25000){
+    if (wait <= 12000){
       await sleep(wait + 300);
       if (token !== speakToken) return;
       try { data = await interactions({
@@ -3092,6 +3093,7 @@ async function speakGemini(text, token){
   if (audioCtx.state === "suspended") await audioCtx.resume();
   const buf = audioCtx.createBuffer(1, n, rate), ch = buf.getChannelData(0);
   for (let i = 0; i < n; i++){ let v = bin.charCodeAt(off+2*i) | (bin.charCodeAt(off+2*i+1) << 8); if (v >= 32768) v -= 65536; ch[i] = v / 32768; }
+  if (T.a && T.txt && !/голос/.test(T.txt)){ T.txt += ", голос через " + ((performance.now() - T.a)/1000).toFixed(1) + " с"; showTiming(); }
   if (TTS_CACHE.size > 40) TTS_CACHE.delete(TTS_CACHE.keys().next().value);
   TTS_CACHE.set(ck, buf); gemTtsErr = "";
   await playBuffer(buf, token);
@@ -3275,13 +3277,16 @@ function encodeWav(samples, rate){
   return btoa(bin);
 }
 const AUDIO_INSTR = "Это голосовое сообщение девочки (по-русски, иногда с английскими словами). Сначала одной строкой запиши, что она сказала, в формате [[она: ...]], а с новой строки дай свой ответ ей по всем своим правилам.";
+const T = { a:0 };
+function showTiming(){ let el = document.getElementById("timeLine"); if (!el){ el = document.createElement("div"); el.id = "timeLine"; el.style.cssText = "font-size:11px;color:#8a97ad;margin-top:2px"; document.getElementById("bubble").appendChild(el); } el.textContent = T.txt; }
 async function handleAudio(b64){
-  const my = ++busy;
+  const my = ++busy; T.a = performance.now();
   setState("thinking");
   const el0 = document.getElementById("errLine"); if (el0) el0.textContent = "";
   let reply = "";
   try {
     const out = await askGemini([{ type:"audio", data:b64, mime_type:"audio/wav" }, { type:"text", text: AUDIO_INSTR }]);
+    T.txt = "ответ " + ((performance.now() - T.a)/1000).toFixed(1) + " с (" + (T.model || "") + ")"; showTiming();
     const m = out.match(/\[\[\s*она\s*:\s*([\s\S]*?)\]\]/i);
     if (m){ showUser(m[1].trim()); reply = out.replace(m[0], "").trim(); } else reply = out.replace(/\[\[[\s\S]*?\]\]/g, "").trim();
   } catch(e){
@@ -3385,7 +3390,7 @@ async function askGemini(text){
       let data;
       try { data = await interactions(body); }
       catch(e){ if (lastInteractionId && e.status === 400){ lastInteractionId = null; delete body.previous_interaction_id; data = await interactions(body); } else throw e; }
-      lastInteractionId = data.id || null;
+      lastInteractionId = data.id || null; T.model = model;
       const out = (data.output_text || stepsOf(data, "text").map(c => c.text || "").join(" ")).trim();
       if (!out) throw Object.assign(new Error("пустой ответ модели " + model), {status: 0});
       return out;
