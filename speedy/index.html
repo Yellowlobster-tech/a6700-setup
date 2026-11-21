@@ -3219,14 +3219,19 @@ async function recStart(){
   REC.src = audioCtx.createMediaStreamSource(REC.stream);
   REC.proc = audioCtx.createScriptProcessor(4096, 1, 1);
   REC.mute = audioCtx.createGain(); REC.mute.gain.value = 0;
-  REC.chunks = []; REC.rate = audioCtx.sampleRate; REC.speech = false; REC.peak = 0; REC.t0 = performance.now(); REC.lastLoud = REC.t0;
+  REC.chunks = []; REC.rate = audioCtx.sampleRate; REC.speech = false; REC.peak = 0; REC.floor = 0; REC.n = 0; REC.t0 = performance.now(); REC.lastLoud = REC.t0;
   REC.proc.onaudioprocess = ev => {
     if (!REC.on) return;
     const d = ev.inputBuffer.getChannelData(0); REC.chunks.push(new Float32Array(d));
     let s = 0; for (let i = 0; i < d.length; i++) s += d[i]*d[i];
     const rms = Math.sqrt(s / d.length), now = performance.now();
-    REC.peak = Math.max(REC.peak, rms);
-    if (rms > 0.025){ REC.speech = true; REC.lastLoud = now; }
+    REC.peak = Math.max(REC.peak, rms); REC.n++;
+    // уровень фона: первые ~0,3 с и дальше медленно по минимуму
+    REC.floor = REC.n <= 3 ? Math.max(REC.floor, rms) : Math.min(REC.floor*1.002 + 1e-5, Math.max(REC.floor*0.98, rms));
+    const thr = Math.max(0.004, REC.floor * 2.5);
+    if (rms > thr && REC.n > 2){ REC.speech = true; REC.lastLoud = now; }
+    const lvl = Math.min(1, rms / Math.max(0.02, thr*4));
+    micBtn.style.boxShadow = `0 0 0 ${(4 + lvl*26).toFixed(0)}px rgba(32,191,107,${(0.25 + lvl*0.45).toFixed(2)})`;
     if (REC.mode === "tap"){
       if (REC.speech && now - REC.lastLoud > 1300) recStop();
       else if (!REC.speech && now - REC.t0 > 7000) recStop();
@@ -3241,9 +3246,15 @@ function recStop(){
   if (!REC.on) return;
   REC.on = false;
   try { REC.src.disconnect(); REC.proc.disconnect(); REC.mute.disconnect(); } catch(e){}
-  micBtn.classList.remove("on");
+  micBtn.classList.remove("on"); micBtn.style.boxShadow = "";
   const len = REC.chunks.reduce((n, c) => n + c.length, 0), dur = len / REC.rate;
-  if (dur < 0.4 || !REC.speech){ setState("idle"); if (dur >= 0.4) showUser("(ничего не слышно, попробуй ещё раз)"); return; }
+  const held = REC.mode === "hold";
+  // держала кнопку — отправляем в любом случае (Gemini сам разберётся), в режиме касания — только если был голос
+  if (dur < 0.4 || (!REC.speech && !(held && REC.peak > 0.0005))){
+    setState("idle");
+    if (dur >= 0.4){ showUser("(ничего не слышно, попробуй ещё раз)"); showDiag("Микрофон почти не слышит (уровень " + REC.peak.toFixed(4) + "). Проверьте, тот ли микрофон выбран в Windows."); }
+    return;
+  }
   const all = new Float32Array(len); let o = 0; REC.chunks.forEach(c => { all.set(c, o); o += c.length; });
   handleAudio(encodeWav(downsample(all, REC.rate, 16000), 16000));
 }
