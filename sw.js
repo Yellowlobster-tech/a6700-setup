@@ -38,6 +38,8 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  /* /speedy/ — отдельное приложение (ёжик Спиди), этот воркер его не трогает */
+  if (url.pathname.startsWith('/speedy/') || url.pathname === '/speedy') return;
 
   /* страница: сначала сеть, кэш — запасной вариант */
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {

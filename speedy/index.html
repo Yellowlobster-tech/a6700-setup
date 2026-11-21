@@ -1,0 +1,3424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Спиди">
+<meta name="theme-color" content="#bfe6ff">
+<title>Ёжик Спиди</title>
+<style>
+:root{
+  --sky1:#bfe6ff; --sky2:#eaf7ff; --hill1:#7ed36b; --hill2:#5bbd52;
+  --ink:#1b2a4a; --accent:#ff5a5f; --gold:#ffc83d; --panel:rgba(255,255,255,.92);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;font-family:"Nunito","Trebuchet MS","Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--sky1)}
+#scene{position:fixed;inset:0;background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 62%,#fff 100%);overflow:hidden}
+#scene svg.bg{position:absolute;inset:0;width:100%;height:100%}
+.cloud{animation:drift linear infinite}
+@keyframes drift{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
+#app{position:relative;z-index:1;height:100vh;height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1vh;padding:calc(6px + env(safe-area-inset-top)) 12px calc(8px + env(safe-area-inset-bottom))}
+#stage{position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+#stage:before{content:"";position:absolute;left:50%;top:52%;width:80%;height:80%;transform:translate(-50%,-50%) scale(.8);border-radius:50%;background:radial-gradient(circle,rgba(120,255,170,.55),rgba(120,255,170,0) 70%);opacity:0;transition:opacity .3s, transform .3s;pointer-events:none}
+#stage.listen:before{opacity:1;transform:translate(-50%,-50%) scale(1.15);animation:glow 1.2s ease-in-out infinite alternate}
+@keyframes glow{to{transform:translate(-50%,-50%) scale(1.3)}}
+#speedy{height:68vh;width:auto;max-width:94vw;overflow:visible;cursor:pointer;filter:drop-shadow(0 18px 18px rgba(20,60,120,.18));-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#panel{width:min(760px,96vw);display:flex;flex-direction:column;gap:1vh}
+#row{display:flex;gap:14px;align-items:center}
+#bubble{flex:1;position:relative;background:rgba(255,255,255,.82);border-radius:22px;padding:10px 18px;min-height:64px;box-shadow:0 8px 24px rgba(30,70,140,.12)}
+#userLine{font-size:14px;color:#5b6b8c;min-height:1.2em}
+#userLine b{color:#3a59c9}
+#speech{font-size:clamp(15px,2.1vh,22px);line-height:1.35;font-weight:700}
+#mic{flex:0 0 auto;width:clamp(84px,12vh,130px);height:clamp(84px,12vh,130px);border-radius:50%;border:6px solid #fff;background:radial-gradient(circle at 35% 30%,#ff8a8f,#e8343b);color:#fff;font-size:clamp(38px,5.5vh,60px);cursor:pointer;box-shadow:0 8px 20px rgba(232,52,59,.4);transition:transform .15s;touch-action:manipulation}
+#mic:active{transform:scale(.94)}
+#mic.on{animation:pulse 1.1s infinite;background:radial-gradient(circle at 35% 30%,#7bed9f,#20bf6b)}
+#mic.wait{animation:wobble 1.6s infinite}
+@keyframes wobble{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(32,191,107,.55)}100%{box-shadow:0 0 0 26px rgba(32,191,107,0)}}
+#micHint{display:none}
+#typeRow{display:flex;gap:8px;opacity:.75}
+#typeRow input{flex:1;font:inherit;font-size:16px;padding:8px 12px;border-radius:12px;border:2px solid #d7e3f7;background:rgba(255,255,255,.8)}
+#typeRow button{font:inherit;font-weight:800;border:none;border-radius:12px;padding:0 14px;background:#3a7bfd;color:#fff;cursor:pointer}
+#adult{position:fixed;top:calc(12px + env(safe-area-inset-top));left:14px;z-index:5;display:flex;gap:8px}
+.qbtn{width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.9);font-size:22px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12);padding:0}
+@media (orientation:portrait){
+  #app{justify-content:space-evenly}
+  #speedy{height:auto;width:96vw;max-height:58vh}
+  #row{flex-direction:column-reverse}
+  #bubble{width:100%}
+  #typeRow{display:none}
+}
+#topbar{position:fixed;top:calc(12px + env(safe-area-inset-top));right:14px;z-index:5;display:flex;gap:10px;align-items:center}
+#modeBadge{font-size:13px;font-weight:800;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.85);color:#4a5a7a}
+#modeBadge.ai{background:#e6fff1;color:#11804a}
+#gear{width:48px;height:48px;border-radius:50%;border:none;background:rgba(255,255,255,.9);font-size:26px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+#thought{position:absolute;left:70%;top:6%;display:none;gap:8px}
+#thought span{width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);animation:dots 1s infinite}
+#thought span:nth-child(2){animation-delay:.15s}#thought span:nth-child(3){animation-delay:.3s}
+@keyframes dots{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-10px);opacity:1}}
+/* overlay */
+#start{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.75),rgba(150,200,255,.85));backdrop-filter:blur(3px);text-align:center;padding:20px}
+#start h1{font-size:clamp(30px,6vh,60px);margin:0 0 10px;color:#1d4fc4}
+#start p{font-size:clamp(16px,2.4vh,24px);margin:0 0 26px;color:#33466e}
+#startBtn{font:inherit;font-size:clamp(24px,4vh,40px);font-weight:900;padding:2.2vh 48px;border-radius:999px;border:none;color:#fff;background:linear-gradient(135deg,#3a7bfd,#1d4fc4);box-shadow:0 10px 0 #143a91,0 18px 30px rgba(0,0,0,.2);cursor:pointer}
+#startBtn:active{transform:translateY(6px);box-shadow:0 4px 0 #143a91}
+/* settings */
+#settings{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(20,35,70,.45);padding:16px}
+#settings.open{display:flex}
+.card{background:#fff;border-radius:24px;max-width:620px;width:100%;max-height:92vh;overflow:auto;padding:24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.card h2{margin:0 0 6px;color:#1d4fc4}
+.card h3{margin:20px 0 8px;font-size:17px;color:#24365e}
+.card label{display:block;font-size:14px;font-weight:700;margin:10px 0 4px;color:#33466e}
+.card input[type=text],.card input[type=password],.card select{width:100%;font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:2px solid #d7e3f7}
+.card input[type=range]{width:100%}
+.card .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.card .note{font-size:13px;color:#5b6b8c;line-height:1.45}
+.card .btn{font:inherit;font-weight:800;border:none;border-radius:12px;padding:10px 16px;cursor:pointer;background:#eef3ff;color:#1d4fc4}
+.card .btn.primary{background:#3a7bfd;color:#fff}
+.card .status{font-size:14px;font-weight:700;margin-top:6px;min-height:1.2em}
+.ok{color:#11804a}.err{color:#c62828}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:700;margin-top:10px}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#24365e;color:#fff;padding:10px 18px;border-radius:14px;font-size:15px;z-index:40;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+@media (orientation:portrait){
+  #app{flex-direction:column;gap:1vh;padding:calc(8px + env(safe-area-inset-top)) 12px calc(8px + env(safe-area-inset-bottom));justify-content:space-between}
+  #controls{justify-content:center}
+  #mic{width:clamp(80px,11vh,110px);height:clamp(80px,11vh,110px)}
+  #micHint{flex:0 1 auto;max-width:55%}
+  #stage{height:auto}
+  #speedy{height:44vh;max-width:96vw}
+  #panel{flex:0 0 auto;width:100%;gap:1vh}
+  #quick{flex-direction:row}
+  .qbtn{flex:1;font-size:clamp(13px,1.8vh,20px);padding:1.2vh 8px;text-align:center}
+  #bubble{min-height:10vh;padding:1.4vh 18px}
+  #bubble:before{display:none}
+  #speech{font-size:clamp(17px,2.4vh,28px)}
+  #typeRow{display:none}
+}
+</style>
+</head>
+<body>
+<div id="scene">
+  <svg class="bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <radialGradient id="sunG"><stop offset="0" stop-color="#fff6b0"/><stop offset=".6" stop-color="#ffd84d"/><stop offset="1" stop-color="#ffd84d" stop-opacity="0"/></radialGradient>
+    </defs>
+    <circle cx="1380" cy="140" r="130" fill="url(#sunG)"/>
+    <circle cx="1380" cy="140" r="62" fill="#ffe066"/>
+    <g class="cloud" style="animation-duration:70s"><g fill="#fff" opacity=".95"><ellipse cx="200" cy="150" rx="90" ry="38"/><ellipse cx="260" cy="130" rx="60" ry="42"/><ellipse cx="150" cy="135" rx="50" ry="32"/></g></g>
+    <g class="cloud" style="animation-duration:95s;animation-delay:-40s"><g fill="#fff" opacity=".85"><ellipse cx="300" cy="260" rx="70" ry="28"/><ellipse cx="345" cy="245" rx="45" ry="30"/></g></g>
+    <g class="cloud" style="animation-duration:120s;animation-delay:-80s"><g fill="#fff" opacity=".9"><ellipse cx="100" cy="90" rx="80" ry="30"/><ellipse cx="150" cy="72" rx="50" ry="34"/></g></g>
+    <path d="M0,640 Q300,520 650,610 T1300,580 T1600,600 V900 H0Z" fill="#9be38a"/>
+    <path d="M0,720 Q400,620 800,710 T1600,690 V900 H0Z" fill="var(--hill1)"/>
+    <path d="M0,800 Q500,740 1000,800 T1600,790 V900 H0Z" fill="var(--hill2)"/>
+    <g fill="#ff7eb6"><circle cx="180" cy="770" r="9"/><circle cx="420" cy="815" r="8"/><circle cx="1220" cy="780" r="9"/><circle cx="1450" cy="830" r="8"/></g>
+    <g fill="#fff36b"><circle cx="300" cy="840" r="7"/><circle cx="980" cy="835" r="8"/><circle cx="1330" cy="860" r="7"/><circle cx="640" cy="790" r="7"/></g>
+  </svg>
+</div>
+
+<div id="topbar">
+  <span id="modeBadge">Демо-режим</span>
+  <button id="gear" title="Настройки" aria-label="Настройки">⚙️</button>
+</div>
+
+<div id="app">
+  <div id="stage">
+    <div id="thought"><span></span><span></span><span></span></div>
+    <!-- Спиди: оригинальный персонаж (голова), нарисован вручную -->
+    <svg id="speedy" viewBox="10 20 480 460" role="img" aria-label="Ёжик Спиди">
+      <defs>
+        <radialGradient id="skinG" cx="38%" cy="28%" r="78%"><stop offset="0" stop-color="#7cc3ff"/><stop offset=".35" stop-color="#3a8cf6"/><stop offset=".75" stop-color="#1f5fd0"/><stop offset="1" stop-color="#123a8f"/></radialGradient>
+        <radialGradient id="aoG" cx="50%" cy="45%" r="55%"><stop offset=".72" stop-color="#0a1f5c" stop-opacity="0"/><stop offset="1" stop-color="#0a1f5c" stop-opacity=".45"/></radialGradient>
+        <radialGradient id="specG" cx="35%" cy="22%" r="40%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <radialGradient id="quillG" gradientUnits="userSpaceOnUse" cx="250" cy="265" r="250"><stop offset=".35" stop-color="#0f2f7a"/><stop offset=".55" stop-color="#2463d6"/><stop offset=".8" stop-color="#3d8df5"/><stop offset="1" stop-color="#7cc3ff"/></radialGradient>
+        <radialGradient id="quillBackG" gradientUnits="userSpaceOnUse" cx="250" cy="265" r="250"><stop offset=".35" stop-color="#081d52"/><stop offset=".6" stop-color="#173f9e"/><stop offset="1" stop-color="#2f7ff0"/></radialGradient>
+        <radialGradient id="peachG" cx="50%" cy="30%" r="75%"><stop offset="0" stop-color="#fff4e6"/><stop offset=".55" stop-color="#ffdcb8"/><stop offset=".85" stop-color="#f4b98a"/><stop offset="1" stop-color="#d9946a"/></radialGradient>
+        <radialGradient id="irisG" cx="45%" cy="38%" r="62%"><stop offset="0" stop-color="#ffe08a"/><stop offset=".4" stop-color="#d98a2b"/><stop offset=".85" stop-color="#7a3a0e"/><stop offset="1" stop-color="#3a1a06"/></radialGradient>
+        <radialGradient id="eyeWhiteG" cx="45%" cy="60%" r="70%"><stop offset="0" stop-color="#ffffff"/><stop offset=".75" stop-color="#eef3ff"/><stop offset="1" stop-color="#b9c6e6"/></radialGradient>
+        <linearGradient id="lidShadeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a1f5c" stop-opacity=".45"/><stop offset=".35" stop-color="#0a1f5c" stop-opacity="0"/></linearGradient>
+        <linearGradient id="lidG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b9bff"/><stop offset="1" stop-color="#1f5fd0"/></linearGradient>
+        <radialGradient id="noseG" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#6a5a7a"/><stop offset=".5" stop-color="#2a2035"/><stop offset="1" stop-color="#0a0710"/></radialGradient>
+        <radialGradient id="earInG" cx="50%" cy="60%" r="60%"><stop offset="0" stop-color="#ffc9b5"/><stop offset="1" stop-color="#e8907a"/></radialGradient>
+        <linearGradient id="mouthInG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a0f1a"/><stop offset="1" stop-color="#8a2232"/></linearGradient>
+        <filter id="dropF" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#06164a" flood-opacity=".45"/></filter>
+        <filter id="softF" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#7a3a1a" flood-opacity=".35"/></filter>
+        <filter id="blurF"><feGaussianBlur stdDeviation="6"/></filter>
+        <clipPath id="eyeClipL"><ellipse cx="205" cy="250" rx="37" ry="47" transform="rotate(-6 205 250)"/></clipPath>
+        <clipPath id="eyeClipR"><ellipse cx="295" cy="250" rx="37" ry="47" transform="rotate(6 295 250)"/></clipPath>
+        <clipPath id="headClip"><ellipse cx="250" cy="265" rx="140" ry="135"/></clipPath>
+        <clipPath id="mouthClip"><path id="mouthClipPath" d="M216,352 Q250,362 284,352 Q250,364 216,352Z"/></clipPath>
+      </defs>
+
+      <ellipse id="shadow" cx="250" cy="458" rx="120" ry="13" fill="rgba(20,60,40,.25)" filter="url(#blurF)"/>
+      <g id="hero">
+        <g id="quillsBack" filter="url(#dropF)"></g>
+        <g id="ears">
+          <g id="earL" transform="translate(162,158) rotate(-32)"><path d="M-34,24 Q-30,-48 0,-66 Q30,-48 34,24Z" fill="url(#skinG)" stroke="#123a8f" stroke-width="2"/><path d="M-19,18 Q-17,-30 0,-44 Q17,-30 19,18Z" fill="url(#earInG)"/></g>
+          <g id="earR" transform="translate(338,158) rotate(32)"><path d="M-34,24 Q-30,-48 0,-66 Q30,-48 34,24Z" fill="url(#skinG)" stroke="#123a8f" stroke-width="2"/><path d="M-19,18 Q-17,-30 0,-44 Q17,-30 19,18Z" fill="url(#earInG)"/></g>
+        </g>
+        <g id="quillsMid" filter="url(#dropF)"></g>
+        <g id="headBall" filter="url(#dropF)">
+          <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#skinG)"/>
+        </g>
+        <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#aoG)"/>
+        <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#specG)"/>
+        <g id="quillsTop"></g>
+        <!-- мордочка -->
+        <g filter="url(#dropF)">
+          <ellipse cx="250" cy="348" rx="88" ry="64" fill="url(#peachG)"/>
+        </g>
+        <ellipse cx="232" cy="306" rx="34" ry="12" fill="#fff" opacity=".35"/>
+        <ellipse cx="190" cy="350" rx="18" ry="11" fill="#ff7f99" opacity=".5"/>
+        <ellipse cx="310" cy="350" rx="18" ry="11" fill="#ff7f99" opacity=".5"/>
+        <!-- глаза -->
+        <g filter="url(#softF)">
+          <ellipse cx="205" cy="250" rx="37" ry="47" transform="rotate(-6 205 250)" fill="url(#eyeWhiteG)"/>
+          <ellipse cx="295" cy="250" rx="37" ry="47" transform="rotate(6 295 250)" fill="url(#eyeWhiteG)"/>
+        </g>
+        <g clip-path="url(#eyeClipL)">
+          <g class="iris"><circle cx="208" cy="248" r="21" fill="url(#irisG)"/><circle cx="208" cy="248" r="10" fill="#120a05"/><ellipse cx="199" cy="238" rx="7.5" ry="9" fill="#fff"/><circle cx="215" cy="258" r="3.2" fill="#fff" opacity=".85"/></g>
+          <rect x="160" y="196" width="90" height="110" fill="url(#lidShadeG)"/>
+          <rect class="lid" x="160" y="196" width="90" height="110" fill="url(#lidG)"/>
+          <ellipse class="cheekLid" cx="205" cy="306" rx="52" ry="16" fill="#2a6fe0"/>
+        </g>
+        <g clip-path="url(#eyeClipR)">
+          <g class="iris"><circle cx="292" cy="248" r="21" fill="url(#irisG)"/><circle cx="292" cy="248" r="10" fill="#120a05"/><ellipse cx="283" cy="238" rx="7.5" ry="9" fill="#fff"/><circle cx="299" cy="258" r="3.2" fill="#fff" opacity=".85"/></g>
+          <rect x="250" y="196" width="90" height="110" fill="url(#lidShadeG)"/>
+          <rect class="lid" x="250" y="196" width="90" height="110" fill="url(#lidG)"/>
+          <ellipse class="cheekLid" cx="295" cy="306" rx="52" ry="16" fill="#2a6fe0"/>
+        </g>
+        <ellipse cx="205" cy="250" rx="37" ry="47" transform="rotate(-6 205 250)" fill="none" stroke="#0f2f7a" stroke-width="3"/>
+        <ellipse cx="295" cy="250" rx="37" ry="47" transform="rotate(6 295 250)" fill="none" stroke="#0f2f7a" stroke-width="3"/>
+        <!-- брови -->
+        <path id="browL" d="M172,186 Q200,162 230,180" stroke="#0b2566" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <path id="browR" d="M270,180 Q300,162 328,186" stroke="#0b2566" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <!-- нос -->
+        <ellipse cx="250" cy="330" rx="16" ry="6" fill="#b8704a" opacity=".35" filter="url(#blurF)"/>
+        <ellipse cx="250" cy="314" rx="19" ry="14" fill="url(#noseG)"/>
+        <ellipse cx="244" cy="308" rx="7" ry="4" fill="#fff" opacity=".75"/>
+        <!-- рот -->
+        <g id="mouthG">
+          <path id="mouth" d="M216,352 Q250,362 284,352 Q250,364 216,352Z" fill="url(#mouthInG)" stroke="#3b1018" stroke-width="3.5" stroke-linejoin="round"/>
+          <g clip-path="url(#mouthClip)">
+            <rect id="teeth" x="230" y="346" width="40" height="11" rx="4" fill="#fff"/>
+            <ellipse id="tongue" cx="250" cy="378" rx="18" ry="11" fill="#ff6f86"/>
+          </g>
+          <path id="foldL" d="M200,336 Q193,347 200,358" stroke="#c97c55" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path id="foldR" d="M300,336 Q307,347 300,358" stroke="#c97c55" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div id="panel">
+    <div id="row">
+      <div id="bubble">
+        <div id="userLine"></div>
+        <div id="speech">Привет! Я ёжик Спиди!</div>
+      </div>
+      <button id="mic" title="Говори!" aria-label="Микрофон">🎤</button>
+    </div>
+    <div id="micHint"></div>
+    <form id="typeRow" autocomplete="off">
+      <input id="typeIn" placeholder="…или напиши здесь (для взрослых)">
+      <button type="submit">➤</button>
+    </form>
+  </div>
+</div>
+<div id="adult">
+  <button class="qbtn" data-act="riddle" title="Загадка">🧩</button>
+  <button class="qbtn" data-act="tale" title="Сказка">📖</button>
+  <button class="qbtn" data-act="translate" title="Волшебный переводчик">🇬🇧</button>
+</div>
+
+<div id="start">
+  <h1>Ёжик Спиди</h1>
+  <p>Самый быстрый и весёлый ёжик ждёт тебя!</p>
+  <button id="startBtn">▶ Разбудить Спиди!</button>
+</div>
+
+<div id="settings" role="dialog" aria-modal="true">
+  <div class="card">
+    <h2>⚙️ Настройки Спиди</h2>
+    <div class="note">Всё сохраняется только в этом браузере. Без ключа Спиди работает в демо-режиме: загадки, сказки и переводчик.</div>
+
+    <h3>🧠 Умный режим (Gemini)</h3>
+    <label for="sKey">API-ключ Gemini (начинается с AQ. или AIza…)</label>
+    <input id="sKey" type="password" placeholder="AIza..." spellcheck="false">
+    <label for="sModel">Модель</label>
+    <input id="sModel" type="text" spellcheck="false" placeholder="gemini-4-hydrogen">
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="testKey">Проверить ключ</button>
+      <button class="btn" id="showKey">👁 Показать</button>
+    </div>
+    <div class="status" id="keyStatus"></div>
+    <div class="note">Где взять ключ: откройте <a href="https://console.cloud.google.com/apis/credentials?project=useful-sumup-515414-j5" target="_blank" rel="noopener">Google Cloud → Credentials</a>, нажмите <b>Create credentials → API key</b>, скопируйте ключ и вставьте сюда. Или проще: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.</div>
+
+    <h3>🔊 Голос</h3>
+    <label for="sTts">Синтезатор речи</label>
+    <select id="sTts">
+      <option value="auto">Авто: живой голос Gemini, если есть ключ, иначе голос браузера</option>
+      <option value="gemini">Живой голос Gemini (тот же ключ)</option>
+      <option value="browser">Встроенный голос браузера (без ключа)</option>
+      <option value="google">Google Cloud Text-to-Speech (нужен ключ и включённый Text-to-Speech API)</option>
+    </select>
+    <div id="gemVoiceBox">
+      <label for="sGemVoice">Голос Gemini</label>
+      <select id="sGemVoice">
+        <option value="Puck">Puck — бодрый, весёлый</option>
+        <option value="Fenrir">Fenrir — азартный, энергичный</option>
+        <option value="Leda">Leda — юный, звонкий</option>
+        <option value="Zephyr">Zephyr — светлый, яркий</option>
+        <option value="Aoede">Aoede — лёгкий, воздушный</option>
+        <option value="Kore">Kore — уверенный, ровный</option>
+        <option value="Achird">Achird — дружелюбный</option>
+        <option value="Sadachbia">Sadachbia — живой</option>
+        <option value="Laomedeia">Laomedeia — бодрый</option>
+        <option value="Sulafat">Sulafat — тёплый</option>
+      </select>
+      <div class="note">Живой голос рассказывает с интонациями сказочника. Если лимит Gemini на озвучку закончится, Спиди сам перейдёт на голос браузера.</div>
+    </div>
+    <div id="browserVoiceBox">
+      <label for="sVoice">Голос браузера</label>
+      <select id="sVoice"></select>
+    </div>
+    <div id="googleVoiceBox" style="display:none">
+      <label for="sTtsKey">Ключ Cloud TTS (можно тот же, если в проекте включён Text-to-Speech API)</label>
+      <input id="sTtsKey" type="password" placeholder="AIza..." spellcheck="false">
+      <label for="sGVoice">Голос Google</label>
+      <select id="sGVoice">
+        <option value="ru-RU-Chirp3-HD-Aoede">ru-RU-Chirp3-HD-Aoede (женский, самый живой)</option>
+        <option value="ru-RU-Chirp3-HD-Puck">ru-RU-Chirp3-HD-Puck (мужской, самый живой)</option>
+        <option value="ru-RU-Wavenet-A">ru-RU-Wavenet-A (женский)</option>
+        <option value="ru-RU-Wavenet-C">ru-RU-Wavenet-C (женский)</option>
+        <option value="ru-RU-Wavenet-E">ru-RU-Wavenet-E (женский)</option>
+        <option value="ru-RU-Wavenet-B">ru-RU-Wavenet-B (мужской)</option>
+        <option value="ru-RU-Wavenet-D">ru-RU-Wavenet-D (мужской)</option>
+        <option value="ru-RU-Standard-A">ru-RU-Standard-A (женский)</option>
+      </select>
+    </div>
+    <label>Высота голоса: <span id="pitchVal"></span></label>
+    <input id="sPitch" type="range" min="0.8" max="1.8" step="0.05">
+    <label>Скорость речи: <span id="rateVal"></span></label>
+    <input id="sRate" type="range" min="0.7" max="1.3" step="0.05">
+    <label class="chk"><input type="checkbox" id="sAuto"> Слушать девочку сразу после ответа Спиди</label>
+    <div class="row" style="margin-top:12px"><button class="btn" id="testVoice">▶ Проверить голос</button></div>
+
+    <h3>📱 Перенести на телефон или iPad</h3>
+    <div class="note">Нажмите кнопку и наведите камеру телефона или iPad на QR-код. Откроется Спиди, и ключ сам сохранится на том устройстве.</div>
+    <div class="row" style="margin-top:8px"><button class="btn" id="qrBtn">Показать QR-код</button></div>
+    <div id="qrBox" style="margin-top:10px"></div>
+    <div class="note" style="margin-top:10px">Микрофон работает в Chrome и Edge, когда файл открыт прямо с диска или с localhost. При первом нажатии браузер спросит разрешение на микрофон.</div>
+
+    <div class="row" style="margin-top:20px;justify-content:flex-end">
+      <button class="btn" id="resetChat">Начать разговор заново</button>
+      <button class="btn primary" id="closeSettings">Готово</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>/* qrcode-generator 1.4.4, (c) Kazuhiko Arase, MIT License */
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<script>
+"use strict";
+/* ================== НАСТРОЙКИ ================== */
+const DEFAULT_MODEL = "gemini-4-hydrogen";
+const FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-flash-latest"];
+const TTS_MODELS = ["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"];
+const CFG_KEY = "speedy_cfg_v1";
+const cfg = Object.assign({
+  key: "", model: DEFAULT_MODEL, tts: "auto", voice: "", ttsKey: "", gVoice: "ru-RU-Wavenet-A",
+  ttsModel: "gemini-3.8-flash-tts", gemVoice: "Puck",
+  pitch: 1.25, rate: 1.0, autoListen: true
+}, loadCfg());
+if ((cfg.cfgVer||0) < 3){ cfg.tts = "auto"; cfg.model = DEFAULT_MODEL; cfg.ttsModel = TTS_MODELS[0]; cfg.cfgVer = 3; }
+const TTS_STYLE_RU = "Озвучь по-русски голосом весёлого, доброго мультяшного ёжика-сказочника, который говорит с маленькой девочкой. Говори живо и тепло, с улыбкой в голосе, с выразительными сказочными интонациями, как в хорошей детской аудиосказке: вопросы звучат с интересом, восклицания радостно, перед загадкой небольшая таинственная пауза. Текст:";
+const TTS_STYLE = "cheerful, warm and playful cartoon storyteller talking to a small child, expressive fairy-tale intonation, smiling voice, lively but clear";
+function loadCfg(){ try { return JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch(e){ return {}; } }
+function saveCfg(){ try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch(e){} }
+
+const SYSTEM_PROMPT = `Ты — весёлый, добрый и быстрый синий Супер-Ёжик по имени Спиди. Ты общаешься с девочкой, которой 6,5 лет. Она живёт в Великобритании и лучше говорит по-английски, но понимает по-русски и учится говорить на русском языке свободно.
+ТВОИ ПРАВИЛА ОБЩЕНИЯ:
+1. ВСЕГДА отвечай только на простом, живом, образном и дружелюбном РУССКОМ языке. Никогда не переходи на английский язык целиком.
+2. Если девочка вставила в свою речь английское слово или сказала фразу по-английски — не ругай и не поправляй сухо. Радостно подхвати мысль, мягко назови это слово по-русски и вплети в игру (например: «О, это же белка — squirrel! По-русски мы говорим: рыжая белочка! А куда она побежала?»).
+3. Говори КОРОТКО: максимум 2–3 простых предложения за один раз, чтобы ребёнку было легко слушать и не скучно.
+4. В конце каждого ответа ОБЯЗАТЕЛЬНО вовлекай её в диалог: задай простой интересный вопрос, предложи мини-загадку или выбор.
+5. Темы: приключения, природа, животные, добрые сказки, загадки, суперскорость, любимые игры и вкусняшки.
+6. СТРОГАЯ БЕЗОПАСНОСТЬ: категорически запрещены любые пугающие, жестокие, взрослые или грустные темы. Если ребёнок спрашивает что-то неподходящее, мягко и весело переведи разговор на игру или сказку.
+7. Не используй смайлики (эмодзи) и звёздочки в тексте ответа, так как текст озвучивается синтезатором речи.
+ВАЖНО: девочка не умеет читать по-русски, вы общаетесь только голосом. Ты сам ведёшь разговор и придумываешь игры голосом: загадки, сказку по очереди, «как это по-русски?», «угадай, кто так говорит» (звуки животных), повторялки и скороговорки попроще, «что бы ты взял в путешествие». Если она молчит, отвечает одним словом или не знает, что сказать, помоги: предложи два простых варианта на выбор. Узнай её имя и обращайся к ней по имени. Хвали за каждое русское слово.
+Дополнительно: речь девочки распознаётся микрофоном, поэтому в ней могут быть ошибки распознавания — догадывайся по смыслу. Если она отвечает на загадку, мягко проверь ответ и похвали.`;
+
+/* ================== ПЕРСОНАЖ: ИГЛЫ ================== */
+const SVGNS = "http://www.w3.org/2000/svg";
+const HX = 250, HY = 265;
+function quill(ang, r0, r1, halfW, sweep){
+  const a = ang*Math.PI/180, w = halfW*Math.PI/180, s = sweep*Math.PI/180;
+  const p = (r, t) => [HX + r*Math.cos(t), HY + r*Math.sin(t)];
+  const [x1,y1] = p(r0, a-w), [x2,y2] = p(r0, a+w), [tx,ty] = p(r1, a + s);
+  const [c1x,c1y] = p(r0 + (r1-r0)*0.55, a - w*0.75 + s*0.35);
+  const [c2x,c2y] = p(r0 + (r1-r0)*0.6, a + w*0.85 + s*0.55);
+  const f = v => v.toFixed(1);
+  return `M${f(x1)},${f(y1)} Q${f(c1x)},${f(c1y)} ${f(tx)},${f(ty)} Q${f(c2x)},${f(c2y)} ${f(x2)},${f(y2)}Z`;
+}
+function addPath(parent, d, fill, extra){
+  const el = document.createElementNS(SVGNS, "path");
+  el.setAttribute("d", d); el.setAttribute("fill", fill);
+  if (extra) for (const k in extra) el.setAttribute(k, extra[k]);
+  parent.appendChild(el); return el;
+}
+(function buildQuills(){
+  const back = document.getElementById("quillsBack"), mid = document.getElementById("quillsMid"), top = document.getElementById("quillsTop");
+  const sweepOf = (ang, amt) => { const d = ang + 90; return Math.sign(d) * Math.min(1, Math.abs(d)/40) * amt; };
+  for (let ang = -200; ang <= 20; ang += 22){
+    const side = Math.abs(ang + 90) / 115;
+    addPath(back, quill(ang, 100, 232 - side*40, 16, sweepOf(ang, 24)), "url(#quillBackG)");
+  }
+  for (let ang = -190; ang <= 10; ang += 25){
+    const a = ang + 10, side = Math.abs(a + 90) / 106;
+    addPath(mid, quill(a, 105, 210 - side*36, 15, sweepOf(a, 20)), "url(#quillG)", {stroke:"#0f2f7a","stroke-width":"1.2"});
+    addPath(mid, quill(a - 4, 125, 192 - side*34, 4.5, sweepOf(a, 20) - 1), "#bfe0ff", {opacity:".35"});
+  }
+  // чубчик на лбу
+  [[-112,175],[-90,190],[-68,172]].forEach(([a, r1]) => {
+    addPath(top, quill(a, 108, r1, 9, sweepOf(a, 10)), "url(#quillG)", {stroke:"#0f2f7a","stroke-width":"1"});
+    addPath(top, quill(a - 2, 118, r1 - 14, 3, sweepOf(a, 10)), "#bfe0ff", {opacity:".35"});
+  });
+})();
+
+/* ================== АНИМАЦИЯ ================== */
+const $ = id => document.getElementById(id);
+const svg = $("speedy"), hero = $("hero");
+const qBack = $("quillsBack"), qMid = $("quillsMid"), earL = $("earL"), earR = $("earR");
+const irises = [...document.querySelectorAll(".iris")], lids = [...document.querySelectorAll(".lid")];
+const browL = $("browL"), browR = $("browR"), mouth = $("mouth"), mouthClipPath = $("mouthClipPath");
+const teeth = $("teeth"), tongue = $("tongue"), foldL = $("foldL"), foldR = $("foldR"), shadow = $("shadow");
+const A = { state:"idle", tilt:0, bob:0, lean:0, squash:0, brow:0, browTilt:0, gx:0, gy:0, mouth:0, ear:0,
+  pulse:0, boundarySeen:false, analyser:null, nextBlink:performance.now()+3500, blinkStart:-1, jump:-10, mouse:null, lastMouse:0 };
+const lerp = (a,b,k) => a + (b-a)*k;
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const audioBuf = new Uint8Array(2048);
+
+function setState(s){
+  A.state = s;
+  const stg = document.getElementById("stage"); if (stg) stg.classList.toggle("listen", s === "listening");
+  const mb = document.getElementById("mic"); if (mb) mb.classList.remove("wait");
+  $("thought").style.display = (s === "thinking") ? "flex" : "none";
+}
+svg.addEventListener("click", () => { A.jump = performance.now()/1000; if (A.state === "listening") return; silenceCount = 0; startListening(); });
+function onPointer(e){ const p = e.touches ? e.touches[0] : e; A.mouse = {x:p.clientX, y:p.clientY}; A.lastMouse = performance.now(); }
+window.addEventListener("mousemove", onPointer); window.addEventListener("touchstart", onPointer, {passive:true});
+
+function frame(now){
+  const t = now/1000, st = A.state;
+  let tTilt = Math.sin(t*0.7)*2.5, tBob = Math.sin(t*2)*4, tLean = 0, tBrow = 0, tBrowTilt = 0, tGx = 0, tGy = 0, tMouth = 0.2, tEar = 0, tSquash = 0;
+  if (A.mouse && now - A.lastMouse < 6000){
+    const ctm = svg.getScreenCTM();
+    if (ctm){
+      const pt = new DOMPoint(A.mouse.x, A.mouse.y).matrixTransform(ctm.inverse());
+      tGx = clamp((pt.x - 250)/20, -11, 11); tGy = clamp((pt.y - 250)/24, -10, 12);
+    }
+  } else { tGx = Math.sin(t*0.37)*4; tGy = Math.sin(t*0.23)*3; }
+
+  if (st === "listening"){
+    tTilt = -11 + Math.sin(t*2)*1.5; tBrow = -10; tLean = 6; tEar = 8 + Math.sin(t*6)*3; tBob = Math.sin(t*3)*2;
+    if (!A.mouse || now - A.lastMouse > 1500){ tGx = 0; tGy = 3; }
+    tMouth = 0.1;
+  } else if (st === "thinking"){
+    tTilt = 8 + Math.sin(t*1.5)*2; tBrow = -5; tBrowTilt = 6; tGx = 8; tGy = -12; tBob = Math.sin(t*1.2)*2; tEar = -3;
+  } else if (st === "speaking"){
+    tTilt = Math.sin(t*1.7)*6; tBob = Math.sin(t*4.4)*3; tLean = Math.sin(t*2.1)*4;
+    tBrow = -5*Math.abs(Math.sin(t*2.7)); tEar = Math.sin(t*3.3)*4;
+    if (A.analyser){
+      A.analyser.getByteTimeDomainData(audioBuf);
+      let s = 0; for (let i=0;i<audioBuf.length;i++){ const v=(audioBuf[i]-128)/128; s += v*v; }
+      tMouth = clamp(Math.sqrt(s/audioBuf.length)*6, 0, 1);
+    } else {
+      const syll = Math.abs(Math.sin(t*9.5)) * (0.65 + 0.35*Math.sin(t*2.3));
+      A.pulse = Math.max(0, A.pulse - 0.028);
+      const env = A.boundarySeen ? clamp(0.25 + A.pulse, 0, 1) : 1;
+      tMouth = clamp((0.12 + 0.8*syll) * env, 0, 1);
+    }
+    tSquash = tMouth * 0.025;
+  }
+  A.tilt = lerp(A.tilt, tTilt, .12); A.bob = lerp(A.bob, tBob, .12); A.lean = lerp(A.lean, tLean, .1);
+  A.brow = lerp(A.brow, tBrow, .15); A.browTilt = lerp(A.browTilt, tBrowTilt, .1); A.ear = lerp(A.ear, tEar, .15);
+  A.gx = lerp(A.gx, tGx, .2); A.gy = lerp(A.gy, tGy, .2);
+  A.mouth = lerp(A.mouth, tMouth, .4); A.squash = lerp(A.squash, tSquash, .3);
+
+  const dj = t - A.jump; let jumpY = 0, spin = 0;
+  if (dj >= 0 && dj < 0.7){ jumpY = -50*Math.sin(Math.PI*dj/0.7); spin = 360*dj/0.7; }
+  const sx = 1 - A.squash*0.5, sy = 1 + A.squash;
+  hero.setAttribute("transform",
+    `translate(${A.lean.toFixed(2)} ${(A.bob + jumpY).toFixed(2)}) rotate(${(A.tilt + spin).toFixed(2)} 250 300) translate(250 400) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(-250 -400)`);
+  shadow.setAttribute("rx", (120 + jumpY*0.8).toFixed(1));
+  const wig = Math.sin(t*1.9)*1.2 + (st === "speaking" ? Math.sin(t*7)*1.0 : 0);
+  qBack.setAttribute("transform", `rotate(${(-wig*0.6).toFixed(2)} 250 265)`);
+  qMid.setAttribute("transform", `rotate(${(wig).toFixed(2)} 250 265)`);
+  earL.setAttribute("transform", `translate(162,158) rotate(${(-32 - A.ear).toFixed(2)})`);
+  earR.setAttribute("transform", `translate(338,158) rotate(${(32 + A.ear*0.6).toFixed(2)})`);
+  irises.forEach(g => g.setAttribute("transform", `translate(${A.gx.toFixed(2)} ${A.gy.toFixed(2)})`));
+  browL.setAttribute("transform", `translate(0 ${A.brow.toFixed(2)}) rotate(${(A.brow*0.35).toFixed(2)} 202 184)`);
+  browR.setAttribute("transform", `translate(0 ${(A.brow - A.browTilt).toFixed(2)}) rotate(${(-A.brow*0.35 - A.browTilt).toFixed(2)} 298 184)`);
+
+  if (now >= A.nextBlink){ A.blinkStart = now; A.nextBlink = now + 3500; }
+  let lid = 0;
+  if (A.blinkStart > 0){ const b = (now - A.blinkStart)/170; lid = b < 1 ? Math.sin(Math.PI*b) : 0; }
+  const lidRest = st === "thinking" ? 0.12 : 0;
+  lids.forEach(r => r.setAttribute("transform", `translate(0 ${(-110 + Math.max(lid, lidRest)*110).toFixed(1)})`));
+
+  const o = A.mouth, y0 = 350, smile = 17 + (st === "listening" ? -3 : 0);
+  const w = 42 - o*7;
+  const d = `M${250-w},${y0} Q250,${y0+smile} ${250+w},${y0} Q250,${(y0 + smile + 3 + o*44).toFixed(1)} ${250-w},${y0}Z`;
+  mouth.setAttribute("d", d); mouthClipPath.setAttribute("d", d);
+  teeth.setAttribute("y", (y0 - 5 + smile*0.4).toFixed(1));
+  teeth.style.opacity = o > 0.12 ? 1 : 0;
+  tongue.setAttribute("cy", (y0 + 8 + o*34).toFixed(1));
+  foldL.setAttribute("transform", `translate(${(o*5).toFixed(1)} 0)`); foldR.setAttribute("transform", `translate(${(-o*5).toFixed(1)} 0)`);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ================== ИНТЕРФЕЙС ================== */
+const speechEl = $("speech"), userLine = $("userLine"), micBtn = $("mic"), micHint = $("micHint");
+function toast(msg, ms=3500){ const el=$("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"), ms); }
+function showUser(text){ userLine.innerHTML = text ? "<b>Ты:</b> " + escapeHtml(text) : ""; }
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function updateBadge(){ const b=$("modeBadge"); if (cfg.key){ b.textContent="Умный режим"; b.classList.add("ai"); } else { b.textContent="Демо-режим"; b.classList.remove("ai"); } }
+updateBadge();
+
+/* ================== ГОЛОС (TTS) ================== */
+let voices = [];
+const synth = window.speechSynthesis || null;
+function loadVoices(){
+  if (!synth) return;
+  voices = synth.getVoices().filter(v => /^ru/i.test(v.lang));
+  const sel = $("sVoice"); sel.innerHTML = "";
+  const auto = document.createElement("option"); auto.value = ""; auto.textContent = "Авто (лучший русский голос)"; sel.appendChild(auto);
+  voices.forEach(v => { const o = document.createElement("option"); o.value = v.name; o.textContent = v.name + (v.localService ? "" : " (онлайн)"); sel.appendChild(o); });
+  sel.value = cfg.voice || "";
+}
+if (synth){ loadVoices(); synth.onvoiceschanged = loadVoices; }
+function pickVoice(){
+  if (cfg.voice){ const v = voices.find(v => v.name === cfg.voice); if (v) return v; }
+  const prefs = [/Svetlana.*Online|Online.*Svetlana/i, /Dariya.*Online|Online.*Dariya/i, /Natural/i, /Online/i, /Google/i, /Milena/i, /Irina/i, /Svetlana/i];
+  for (const re of prefs){ const v = voices.find(v => re.test(v.name)); if (v) return v; }
+  return voices[0] || null;
+}
+function splitSentences(text){
+  const parts = text.match(/[^.!?…]+[.!?…]*/g) || [text];
+  return parts.map(s => s.trim()).filter(Boolean);
+}
+let speakToken = 0;
+function stopSpeaking(){
+  speakToken++;
+  if (synth) synth.cancel();
+  if (currentSource){ try{ currentSource.stop(); }catch(e){} currentSource = null; }
+  A.analyser = null;
+}
+async function waitVoices(){
+  if (!synth || voices.length) return;
+  for (let i = 0; i < 15 && !voices.length; i++){ loadVoices(); await new Promise(r => setTimeout(r, 100)); }
+}
+async function speakBrowser(text, token){
+  await waitVoices();
+  return new Promise(resolve => {
+    const v = pickVoice();
+    if (!synth || !v){
+      if (!synth || !voices.length) toast("В этом браузере нет русского голоса. Лучше открыть в Edge или Chrome.");
+      setTimeout(resolve, Math.min(9000, 900 + text.length*65)); return;
+    }
+    A.boundarySeen = false;
+    const parts = splitSentences(text); let i = 0;
+    const next = () => {
+      if (token !== speakToken || i >= parts.length) return resolve();
+      const u = new SpeechSynthesisUtterance(parts[i++]);
+      u.voice = v; u.lang = v.lang || "ru-RU";
+      const q = /\?\s*$/.test(u.text), ex = /!\s*$/.test(u.text);
+      u.pitch = clamp(cfg.pitch + (q ? 0.12 : ex ? 0.06 : (Math.random()*0.08 - 0.04)), 0.5, 2);
+      u.rate = clamp(cfg.rate * (q ? 0.94 : ex ? 1.05 : 0.98), 0.5, 2);
+      let done = false;
+      const fin = () => { if (done) return; done = true; clearTimeout(guard); next(); };
+      const guard = setTimeout(fin, 2500 + u.text.length * 140 / cfg.rate);
+      u.onboundary = () => { A.boundarySeen = true; A.pulse = 1; };
+      u.onend = fin; u.onerror = fin;
+      synth.speak(u);
+    };
+    synth.cancel(); next();
+  });
+}
+let audioCtx = null, currentSource = null;
+async function speakGoogle(text, token){
+  const key = cfg.ttsKey || cfg.key;
+  if (!key) throw new Error("нет ключа TTS");
+  const semis = clamp((cfg.pitch - 1) * 16, -20, 20);
+  const res = await fetch("https://texttospeech.googleapis.com/v1/text:synthesize?key=" + encodeURIComponent(key), {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ input:{text}, voice:{languageCode:"ru-RU", name:cfg.gVoice}, audioConfig:{audioEncoding:"MP3", pitch:semis, speakingRate:cfg.rate} })
+  });
+  if (!res.ok){ const e = await res.text(); throw new Error("Cloud TTS " + res.status + ": " + e.slice(0,160)); }
+  const data = await res.json();
+  if (token !== speakToken) return;
+  audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+  const bin = atob(data.audioContent), bytes = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  const buf = await audioCtx.decodeAudioData(bytes.buffer);
+  if (token !== speakToken) return;
+  await playBuffer(buf, token);
+}
+function ttsMode(){
+  if (cfg.tts === "auto") return cfg.key ? "gemini" : "browser";
+  return cfg.tts;
+}
+let gemTtsCooldown = 0;
+async function speakGemini(text, token){
+  if (!cfg.key) throw new Error("нет ключа");
+  const models = [cfg.ttsModel || TTS_MODELS[0], ...TTS_MODELS.filter(m => m !== cfg.ttsModel)];
+  let data, lastErr;
+  for (const model of models){
+    try {
+      data = await interactions({
+        model, store: false,
+        input: [{ type: "user_input", content: [{ type: "text", text, annotations: [{ type: "speech_metadata", style: TTS_STYLE }] }] }],
+        response_format: { type: "audio", mime_type: "audio/l16", sample_rate: 24000 },
+        generation_config: { speech_config: [{ voice: cfg.gemVoice || "Puck" }] }
+      });
+      break;
+    } catch(e){ lastErr = e; data = null; if (e.status !== 404 && e.status !== 400) break; }
+  }
+  if (!data){ const e = new Error("Gemini TTS " + (lastErr ? lastErr.message : "")); e.status = lastErr && lastErr.status; throw e; }
+  const aud = stepsOf(data, "audio").pop();
+  if (!aud || !aud.data) throw new Error("Gemini TTS: пустой ответ");
+  if (token !== speakToken) return;
+  let bin = atob(aud.data), off = 0, rate = 24000;
+  if (bin.slice(0,4) === "RIFF"){ // на всякий случай: WAV-заголовок
+    rate = bin.charCodeAt(24) | (bin.charCodeAt(25) << 8) | (bin.charCodeAt(26) << 16);
+    const di = bin.indexOf("data"); off = di >= 0 ? di + 8 : 44;
+  }
+  const n = (bin.length - off) >> 1;
+  audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+  const buf = audioCtx.createBuffer(1, n, rate), ch = buf.getChannelData(0);
+  for (let i = 0; i < n; i++){ let v = bin.charCodeAt(off+2*i) | (bin.charCodeAt(off+2*i+1) << 8); if (v >= 32768) v -= 65536; ch[i] = v / 32768; }
+  await playBuffer(buf, token);
+}
+async function playBuffer(buf, token){
+  if (token !== speakToken) return;
+  setState("speaking");
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const an = audioCtx.createAnalyser(); an.fftSize = 2048;
+  src.connect(an); an.connect(audioCtx.destination);
+  currentSource = src; A.analyser = an;
+  await new Promise(r => { src.onended = r; src.start(); });
+  A.analyser = null; currentSource = null;
+}
+async function say(text, {listenAfter = true} = {}){
+  text = cleanText(text);
+  stopListening(true);
+  stopSpeaking();
+  const token = speakToken;
+  speechEl.textContent = text;
+  setState("speaking");
+  try {
+    const mode = ttsMode();
+    if (mode === "gemini" && Date.now() > gemTtsCooldown){
+      setState("thinking");
+      try { await speakGemini(text, token); }
+      catch(e){
+        console.warn(e);
+        if (e.status === 429){ gemTtsCooldown = Date.now() + 10*60*1000; toast("Лимит живого голоса Gemini исчерпан, пока говорю голосом браузера.", 5000); }
+        else toast("Живой голос не сработал (" + (e.message||e) + "), говорю голосом браузера.", 5000);
+        if (token === speakToken){ setState("speaking"); await speakBrowser(text, token); }
+      }
+    } else if (mode === "google" && (cfg.ttsKey || cfg.key)){
+      try { await speakGoogle(text, token); }
+      catch(e){ console.warn(e); toast("Google-голос не сработал, говорю встроенным голосом."); if (token === speakToken) await speakBrowser(text, token); }
+    } else await speakBrowser(text, token);
+  } finally {
+    if (token === speakToken){
+      setState("idle");
+      if (listenAfter && cfg.autoListen && recogSupported) setTimeout(() => { if (A.state === "idle" && token === speakToken) startListening(); }, 350);
+    }
+  }
+}
+function cleanText(t){
+  return String(t || "")
+    .replace(/\p{Extended_Pictographic}|️|‍/gu, "")
+    .replace(/[*_#`~>]+/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+function giggle(){
+  const lines = ["Хи-хи, щекотно! А ты боишься щекотки?", "Ух, какой прыжок! А ты умеешь прыгать высоко?", "Вжух! Я самый быстрый ёжик! А ты быстро бегаешь?"];
+  say(pick(lines));
+}
+
+/* ================== СЛУХ (STT) ================== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recogSupported = !!SR;
+let recog = null, listening = false, gotFinal = false, silentStop = false, started = false, silenceCount = 0;
+function onSilence(){
+  silenceCount++;
+  if (silenceCount === 1){
+    say(pick(["Ты тут? Я тебя слушаю! Скажи мне что-нибудь!", "Ау! Скажи мне что-нибудь, я жду!", "Я слушаю тебя! Хочешь загадку? Скажи: да!"]));
+  } else {
+    setState("idle"); micBtn.classList.add("wait");
+  }
+}
+if (recogSupported){
+  recog = new SR();
+  recog.lang = "ru-RU"; recog.interimResults = true; recog.continuous = false; recog.maxAlternatives = 1;
+  recog.onstart = () => { listening = true; started = true; gotFinal = false; micBtn.classList.add("on"); micHint.textContent = "Спиди слушает… говори!"; setState("listening"); };
+  recog.onresult = e => {
+    let interim = "", fin = "";
+    for (let i = e.resultIndex; i < e.results.length; i++){
+      const r = e.results[i]; if (r.isFinal) fin += r[0].transcript; else interim += r[0].transcript;
+    }
+    if (interim) showUser(interim + "…");
+    if (fin){ gotFinal = true; silenceCount = 0; showUser(fin); handleUser(fin.trim()); }
+  };
+  recog.onerror = e => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed"){
+      toast("Разреши доступ к микрофону (значок замка/камеры в адресной строке).", 6000);
+    } else if (e.error === "network"){
+      toast("Для распознавания речи нужен интернет.");
+    }
+  };
+  recog.onend = () => {
+    listening = false; micBtn.classList.remove("on");
+    micHint.textContent = "Нажми на микрофон и скажи что-нибудь Спиди!";
+    if (!gotFinal && A.state === "listening") setState("idle");
+    if (!gotFinal && !silentStop && started) onSilence();
+    silentStop = false; started = false;
+  };
+} else {
+  micHint.textContent = "Голосом можно говорить в Chrome или Edge. А пока — нажимай кнопки!";
+}
+let micStream = null;
+async function warmMic(){
+  if (micStream || location.protocol !== "file:" || !navigator.mediaDevices) return;
+  try { micStream = await navigator.mediaDevices.getUserMedia({audio:true}); } catch(e){}
+}
+function startListening(){
+  if (!recogSupported){ toast("Микрофон работает в Chrome или Edge. Можно нажимать кнопки или писать."); $("typeIn").focus(); return; }
+  if (listening) return;
+  stopSpeaking(); setState("idle");
+  warmMic().finally(() => { try { recog.start(); } catch(e){ /* уже запущено */ } });
+}
+function stopListening(silent){
+  if (recog && listening){ silentStop = !!silent; try { recog.abort(); } catch(e){} }
+}
+micBtn.addEventListener("click", () => { silenceCount = 0; if (listening){ stopListening(true); setState("idle"); } else startListening(); });
+
+/* ================== МОЗГ ================== */
+let history = [];  // не используется (история хранится на сервере Gemini)
+const QUICK_PROMPTS = {
+  riddle: "Загадай мне, пожалуйста, новую простую загадку для ребёнка шести лет. Если я не отгадаю — дай подсказку.",
+  tale: "Давай сочиним сказку по очереди! Начни новую добрую сказку в двух предложениях и спроси меня, что будет дальше.",
+  translate: "Давай поиграем в Волшебного переводчика! Попроси меня назвать любое английское слово, а потом ты скажешь, как оно звучит по-русски, и придумаешь с ним маленькую историю."
+};
+const QUICK_LABELS = { riddle:"🧩 Загадай загадку", tale:"📖 Сочиним сказку", translate:"🇬🇧➡️🇷🇺 Волшебный переводчик" };
+document.querySelectorAll(".qbtn").forEach(b => b.addEventListener("click", () => {
+  const act = b.dataset.act; showUser(QUICK_LABELS[act]); handleUser(QUICK_PROMPTS[act], act);
+}));
+$("typeRow").addEventListener("submit", e => { e.preventDefault(); const v = $("typeIn").value.trim(); if (!v) return; $("typeIn").value = ""; showUser(v); handleUser(v); });
+
+let busy = 0;
+async function handleUser(text, quick){
+  if (!text) return;
+  const my = ++busy;
+  stopListening(true); stopSpeaking();
+  setState("thinking");
+  const started = performance.now();
+  let reply = "";
+  if (cfg.key){
+    try { reply = await askGemini(text); }
+    catch(e){ console.warn(e); toast("Умный режим недоступен: " + (e.message||e) + ". Включаю демо-режим.", 5000); reply = ""; }
+  }
+  if (!reply) reply = demoBrain(text, quick);
+  const wait = 600 - (performance.now() - started);
+  if (wait > 0) await new Promise(r => setTimeout(r, wait));
+  if (my !== busy) return;
+  say(reply);
+}
+
+const API = "https://generativelanguage.googleapis.com/v1beta/interactions";
+async function interactions(body){
+  const res = await fetch(API, { method:"POST", headers:{"Content-Type":"application/json", "x-goog-api-key": cfg.key}, body: JSON.stringify(body) });
+  let data = await res.json().catch(() => ({}));
+  if (Array.isArray(data)) data = data[0] || {};
+  if (!res.ok || data.error){
+    const msg = data.error && data.error.message ? data.error.message : "HTTP " + res.status;
+    const err = new Error(`${res.status}: ${msg.slice(0,160)}`); err.status = res.status; throw err;
+  }
+  return data;
+}
+function stepsOf(data, type){
+  const out = [];
+  (data.steps || []).forEach(st => { if (st.type === "model_output" || !st.type) (st.content || []).forEach(c => { if (c.type === type) out.push(c); }); });
+  return out;
+}
+let lastInteractionId = null;
+async function askGemini(text){
+  const models = [cfg.model || DEFAULT_MODEL, ...FALLBACK_MODELS.filter(m => m !== cfg.model)];
+  let lastErr;
+  for (const model of models){
+    try {
+      const body = { model, system_instruction: SYSTEM_PROMPT, input: text };
+      if (lastInteractionId) body.previous_interaction_id = lastInteractionId;
+      let data;
+      try { data = await interactions(body); }
+      catch(e){ if (lastInteractionId && e.status === 400){ lastInteractionId = null; delete body.previous_interaction_id; data = await interactions(body); } else throw e; }
+      lastInteractionId = data.id || null;
+      const out = (data.output_text || stepsOf(data, "text").map(c => c.text || "").join(" ")).trim();
+      return out || "Ой, давай лучше поиграем во что-нибудь весёлое! Хочешь загадку или сказку?";
+    } catch(e){
+      lastErr = e;
+      if (!(e.status === 404 || (e.status === 400 && /model/i.test(e.message)))) break;
+    }
+  }
+  throw lastErr;
+}
+async function geminiCall(model, _contents){
+  const models = [model || DEFAULT_MODEL, ...FALLBACK_MODELS.filter(m => m !== model)];
+  let lastErr;
+  for (const m of models){
+    try {
+      const data = await interactions({ model: m, system_instruction: SYSTEM_PROMPT, input: "Поздоровайся одним коротким предложением.", store: false });
+      if (m !== cfg.model){ cfg.model = m; saveCfg(); }
+      return (data.output_text || stepsOf(data, "text").map(c => c.text || "").join(" ")).trim();
+    } catch(e){ lastErr = e; if (!(e.status === 404 || (e.status === 400 && /model/i.test(e.message)))) break; }
+  }
+  throw lastErr;
+}
+
+/* ================== ДЕМО-МОЗГ (офлайн) ================== */
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const norm = s => s.toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9\s-]/g," ").replace(/\s+/g," ").trim();
+const has = (t, list) => list.some(w => t.includes(w));
+const hasWord = (t, list) => { const ws = " " + t + " "; return list.some(w => ws.includes(" " + w + " ")); };
+const D = { mode:null, riddle:null, tries:0, usedRiddles:[], tale:null, step:0, name:"", offer:null, lastTale:-1 };
+
+const RIDDLES = [
+  {q:"Хожу в пушистой шубке, живу в густом лесу. В дупле на старом дубе орешки я грызу. Кто это?", a:"белочка", k:["белк","белоч","squirrel"], h:"Подсказка: она рыжая, с пушистым хвостом и прыгает по веткам."},
+  {q:"Зимой и летом одним цветом. Что это?", a:"ёлочка", k:["елк","ель","елоч","елка","christmas tree","tree"], h:"Подсказка: она колючая и зелёная, а на праздник её наряжают игрушками."},
+  {q:"Сердитый недотрога живёт в глуши лесной. Иголок очень много, а нитки ни одной. Кто это?", a:"ёжик, как я", k:["еж","hedgehog","спиди"], h:"Подсказка: посмотри на меня внимательно!"},
+  {q:"Длинное ухо, комочек пуха, прыгает ловко, любит морковку. Кто это?", a:"зайчик", k:["заяц","зайч","зайк","кролик","rabbit","bunny"], h:"Подсказка: у него длинные ушки и короткий хвостик."},
+  {q:"Мягкие лапки, а в лапках царапки. Кто это?", a:"кошка", k:["кошк","кот","кис","cat","kitty"], h:"Подсказка: она говорит мяу и любит молочко."},
+  {q:"Сам алый, сахарный, кафтан зелёный, бархатный. Что это?", a:"арбуз", k:["арбуз","watermelon"], h:"Подсказка: это большая полосатая ягода, внутри красная и сладкая."},
+  {q:"Голубой платок, алый колобок по платку катается, людям улыбается. Что это?", a:"солнышко", k:["солн","sun"], h:"Подсказка: оно светит днём на небе и греет нас."},
+  {q:"Утром рано он встаёт, громко песенку поёт: ку-ка-ре-ку! Кто это?", a:"петушок", k:["петух","петуш","rooster","cock"], h:"Подсказка: у него красный гребешок и красивый хвост."},
+  {q:"Хозяин лесной просыпается весной, а зимой под вьюжный вой спит в берлоге снеговой. Кто это?", a:"медведь", k:["медвед","мишк","мишут","bear"], h:"Подсказка: он большой, косолапый и очень любит мёд."},
+  {q:"Не птица, а с крыльями, над цветами порхает, нектар собирает. Кто это?", a:"бабочка", k:["бабоч","butterfly"], h:"Подсказка: у неё красивые разноцветные крылышки."},
+  {q:"Круглое, румяное, я расту на ветке. Любят меня взрослые и маленькие детки. Что это?", a:"яблоко", k:["яблок","apple"], h:"Подсказка: оно бывает красное, зелёное или жёлтое, и оно хрустит."},
+  {q:"Красна девица сидит в темнице, а коса на улице. Что это?", a:"морковка", k:["морков","carrot"], h:"Подсказка: её очень любят зайчики, и она оранжевая."},
+  {q:"Висит за окошком кулёк ледяной, он полон капели и пахнет весной. Что это?", a:"сосулька", k:["сосул","icicle","лед"], h:"Подсказка: она висит на крыше и тает весной: кап-кап!"},
+  {q:"Течёт, течёт — не вытечет, бежит, бежит — не выбежит. Что это?", a:"речка", k:["рек","реч","river","ручей"], h:"Подсказка: в ней плавают рыбки, а летом в ней купаются."},
+  {q:"Не лает, не кусает, а в дом не пускает. Что это?", a:"замок", k:["замок","замоч","lock","ключ"], h:"Подсказка: его открывают ключиком."},
+  {q:"Пушистая вата плывёт куда-то. Чем вата ниже, тем дождик ближе. Что это?", a:"облако", k:["облак","туч","cloud"], h:"Подсказка: оно белое и плывёт по небу."},
+  {q:"Гуляет по траве, рога на голове, говорит му-у и даёт молоко. Кто это?", a:"корова", k:["коров","cow"], h:"Подсказка: она пасётся на лугу и жуёт травку."}
+];
+
+const TALES = [
+  { start:"Жил-был маленький ёжик, который бегал быстрее ветра. Однажды утром он нашёл на тропинке волшебный светящийся жёлудь! Как ты думаешь, что умеет этот жёлудь?",
+    steps:[
+      "Вдруг из-за кустика выглянул новый друг. Кто это был, как ты думаешь?",
+      "Друзья решили отправиться в путешествие. Куда они пойдут: в волшебный лес, на радужную гору или к синему морю?",
+      "По дороге им встретилась речка, а моста нет! Как друзьям перебраться на другой берег?",
+      "Ура, получилось! А на том берегу их ждал весёлый праздник с пирогами. Какое угощение ты бы принесла на праздник?",
+      "Все веселились до самого вечера, а потом смотрели на звёзды. Вот и сказке конец, а кто слушал — молодец! Сочиним ещё одну сказку или поиграем в загадки?"
+    ]},
+  { start:"В одном солнечном лесу жила-была маленькая белочка. Больше всего на свете она мечтала научиться летать! Как ты думаешь, кто может ей помочь?",
+    steps:[
+      "Они вместе придумали волшебный план. Что им понадобится для полёта: воздушный шарик, крылышки из листьев или волшебная пыльца?",
+      "Белочка поднялась высоко-высоко, выше деревьев! Что она увидела сверху?",
+      "Вдруг подул весёлый ветерок и закружил белочку. Куда её принёс ветерок?",
+      "Там белочка встретила новых друзей, и они вместе играли. В какую игру они играли, как ты думаешь?",
+      "Вечером белочка вернулась домой счастливая и рассказала всем о своём полёте. Вот и сказке конец! Хочешь ещё сказку или загадку?"
+    ]},
+  { start:"Высоко в небе жило маленькое пушистое облачко. Оно было очень любопытное и всё время хотело узнать, что происходит на земле. Как ты думаешь, как зовут облачко?",
+    steps:[
+      "Однажды облачко увидело внизу грустный цветочек, которому хотелось пить. Что сделало облачко?",
+      "Цветочек расцвёл и сказал спасибо! А какого цвета был этот цветочек?",
+      "Облачко полетело дальше и увидело детей на площадке. Что они делали?",
+      "Облачко так обрадовалось, что нарисовало на небе радугу! Какой цвет в радуге твой самый любимый?",
+      "Вот так облачко подарило всем радость. Вот и сказке конец, а кто слушал — молодец! Сочиним новую сказку или поиграем в загадки?"
+    ]}
+];
+
+const DICT = {
+  cat:"кошка", dog:"собака", apple:"яблоко", banana:"банан", house:"дом", sun:"солнце", moon:"луна", star:"звезда",
+  tree:"дерево", flower:"цветок", bird:"птичка", fish:"рыбка", horse:"лошадка", cow:"корова", pig:"свинка", sheep:"овечка",
+  rabbit:"зайчик", bunny:"зайка", bear:"медведь", fox:"лиса", wolf:"волк", mouse:"мышка", frog:"лягушка", duck:"уточка",
+  squirrel:"белочка", hedgehog:"ёжик", owl:"сова", butterfly:"бабочка", bee:"пчёлка", lion:"лев", tiger:"тигр", elephant:"слон",
+  monkey:"обезьянка", giraffe:"жираф", zebra:"зебра", penguin:"пингвин", dolphin:"дельфин", whale:"кит", turtle:"черепаха", unicorn:"единорог",
+  dragon:"дракончик", princess:"принцесса", castle:"замок", car:"машина", bus:"автобус", train:"поезд", plane:"самолёт", boat:"лодка",
+  ship:"корабль", bike:"велосипед", ball:"мячик", doll:"кукла", toy:"игрушка", book:"книжка", pencil:"карандаш", school:"школа",
+  teacher:"учительница", friend:"друг", mum:"мама", mom:"мама", dad:"папа", granny:"бабушка", grandma:"бабушка", grandpa:"дедушка",
+  sister:"сестрёнка", brother:"братик", baby:"малыш", girl:"девочка", boy:"мальчик", water:"вода", milk:"молоко", juice:"сок",
+  bread:"хлеб", cheese:"сыр", cake:"торт", cookie:"печенье", biscuit:"печенье", sweet:"конфета", candy:"конфета", chocolate:"шоколад",
+  "ice cream":"мороженое", icecream:"мороженое", pizza:"пицца", strawberry:"клубника", orange:"апельсин", carrot:"морковка", egg:"яичко", soup:"суп",
+  red:"красный", blue:"синий", green:"зелёный", yellow:"жёлтый", pink:"розовый", purple:"фиолетовый", white:"белый", black:"чёрный",
+  rainbow:"радуга", rain:"дождик", snow:"снег", snowman:"снеговик", cloud:"облако", sky:"небо", sea:"море", beach:"пляж",
+  park:"парк", garden:"сад", forest:"лес", mountain:"гора", river:"речка", bed:"кроватка", chair:"стул", table:"стол",
+  window:"окно", door:"дверь", hat:"шапка", shoes:"туфельки", dress:"платье", happy:"весёлый", big:"большой", small:"маленький",
+  fast:"быстрый", slow:"медленный", hello:"привет", goodbye:"до свидания", yes:"да", no:"нет", please:"пожалуйста", thank:"спасибо", thanks:"спасибо",
+  love:"люблю", play:"играть", run:"бегать", jump:"прыгать", dance:"танцевать", sing:"петь", swim:"плавать", sleep:"спать",
+  birthday:"день рождения", present:"подарок", gift:"подарок", balloon:"воздушный шарик", party:"праздник", magic:"волшебство", fairy:"фея", heart:"сердечко"
+};
+// английские слова, которые русский распознаватель может записать русскими буквами
+const TRANSLIT = {
+  "кэт":"cat","кет":"cat","дог":"dog","эпл":"apple","эппл":"apple","банана":"banana","хаус":"house","сан":"sun","мун":"moon","стар":"star",
+  "три":"tree","флауэр":"flower","флавер":"flower","берд":"bird","фиш":"fish","хорс":"horse","кау":"cow","пиг":"pig","рэббит":"rabbit","рэбит":"rabbit",
+  "беар":"bear","бэар":"bear","фокс":"fox","маус":"mouse","фрог":"frog","дак":"duck","скуиррел":"squirrel","сквирел":"squirrel","сквиррел":"squirrel",
+  "хеджхог":"hedgehog","аул":"owl","баттерфляй":"butterfly","баттерфлай":"butterfly","би":"bee","лайон":"lion","тайгер":"tiger","элефант":"elephant",
+  "манки":"monkey","юникорн":"unicorn","драгон":"dragon","принцесс":"princess","кар":"car","бас":"bus","трейн":"train","плейн":"plane","боут":"boat",
+  "болл":"ball","бол":"ball","долл":"doll","той":"toy","бук":"book","скул":"school","френд":"friend","мам":"mum","дэд":"dad","дед":"dad","вотер":"water","уотер":"water",
+  "милк":"milk","джус":"juice","кейк":"cake","куки":"cookie","бисквит":"biscuit","свит":"sweet","кэнди":"candy","чоколейт":"chocolate","айскрим":"ice cream",
+  "пицца":"pizza","строберри":"strawberry","оранж":"orange","эгг":"egg","ред":"red","блу":"blue","грин":"green","еллоу":"yellow","йеллоу":"yellow","пинк":"pink",
+  "перпл":"purple","уайт":"white","вайт":"white","блэк":"black","рейнбоу":"rainbow","рейн":"rain","сноу":"snow","сноумен":"snowman","клауд":"cloud",
+  "скай":"sky","си":"sea","бич":"beach","парк":"park","гарден":"garden","форест":"forest","маунтин":"mountain","ривер":"river","хэппи":"happy","хеппи":"happy",
+  "биг":"big","смол":"small","фаст":"fast","хеллоу":"hello","хелло":"hello","хэллоу":"hello","гудбай":"goodbye","плиз":"please","сенк":"thank","сэнкс":"thanks",
+  "лав":"love","плей":"play","ран":"run","джамп":"jump","данс":"dance","свим":"swim","слип":"sleep","бёрздей":"birthday","бездей":"birthday","парти":"party",
+  "мэджик":"magic","меджик":"magic","фея":"fairy","фейри":"fairy","харт":"heart","балун":"balloon","презент":"present"
+};
+function findEnglish(text){
+  const t = norm(text);
+  if (t.includes("ice cream")) return "ice cream";
+  const words = t.split(" ");
+  const weak = ["love","play","run","jump","dance","sing","swim","sleep","yes","no","please","thank","thanks","hello","big","small","fast","slow","happy"];
+  for (const w of words){ if (/^[a-z]+$/.test(w) && DICT[w] && !weak.includes(w)) return w; }
+  for (const w of words){ if (/^[a-z]+$/.test(w) && DICT[w]) return w; }
+  for (const w of words){ if (/^[a-z]+$/.test(w) && w.endsWith("s") && DICT[w.slice(0,-1)]) return w.slice(0,-1); }
+  return null;
+}
+function findTranslit(text){
+  const words = norm(text).split(" ");
+  for (const w of words){ if (TRANSLIT[w]) return TRANSLIT[w]; }
+  return null;
+}
+const UNSAFE = ["страш","ужас","убий","убит","убива","кров","смерт","умер","умира","мертв","драк","бить ","оружи","пистолет","автомат","войн","бомб","призрак","скелет","зомби","монстр","чудовищ","демон","черт","ад ","секс","поцел","пиво","водк","сигарет","наркот","дурак","плох","грустн","плачу","боюсь"];
+const YES = ["да","давай","ага","угу","хочу","конечно","еще","yes","yeah","ok","окей","можно","поехали"];
+const NO = ["нет","не хочу","no","неа","не надо"];
+
+function startRiddle(){
+  let pool = RIDDLES.map((_,i)=>i).filter(i => !D.usedRiddles.includes(i));
+  if (!pool.length){ D.usedRiddles = []; pool = RIDDLES.map((_,i)=>i); }
+  const i = pick(pool); D.usedRiddles.push(i);
+  D.mode = "riddle"; D.riddle = RIDDLES[i]; D.tries = 0;
+  return pick(["Слушай загадку! ", "Ура, загадка! ", "Внимание, загадка! ", "Ушки на макушке! "]) + D.riddle.q;
+}
+function startTale(){
+  let i; do { i = Math.floor(Math.random()*TALES.length); } while (TALES.length > 1 && i === D.lastTale);
+  D.lastTale = i; D.mode = "tale"; D.tale = TALES[i]; D.step = 0;
+  return "Ура, сочиняем сказку вместе! " + D.tale.start;
+}
+function startTranslate(){
+  D.mode = "translate";
+  return "Включаю волшебный переводчик! Скажи мне любое английское слово, например cat или rainbow, а я скажу, как оно звучит по-русски!";
+}
+function praise(){ return pick(["Вот это да!", "Какая чудесная идея!", "Здорово придумала!", "Ух ты, как интересно!", "Отлично!", "Замечательно!"]); }
+function nameBit(){ return D.name && Math.random() < 0.4 ? ", " + D.name : ""; }
+
+function translateReply(text){
+  const en = findEnglish(text) || findTranslit(text);
+  if (!en) return "Ой, такое слово я пока не знаю. Попробуй другое: например, dog, apple или unicorn! Какое слово скажешь?";
+  const ru = DICT[en];
+  const stories = [
+    `Представь: Спиди мчится по лесу и вдруг находит волшебное слово «${ru}», и оно сверкает, как звёздочка!`,
+    `Давай повторим вместе: ${ru}! Отлично звучит, правда?`,
+    `Скажи вслед за мной: ${ru}! А теперь громко, как супергерой: ${ru}!`,
+    `Ух, слово «${ru}» такое весёлое, что даже белочки в лесу запрыгали!`
+  ];
+  return `${en} по-русски будет «${ru}»! ${pick(stories)} Какое следующее английское слово?`;
+}
+
+function demoBrain(raw, quick){
+  if (quick === "riddle") return startRiddle();
+  if (quick === "tale") return startTale();
+  if (quick === "translate") return startTranslate();
+  const t = norm(raw);
+  if (!t) return "Я не расслышал. Скажи ещё раз, пожалуйста, погромче!";
+
+  // безопасность
+  if (has(" " + t + " ", UNSAFE)){
+    D.mode = null; D.offer = "riddle";
+    return pick([
+      "Давай лучше о чём-нибудь весёлом и добром! Хочешь, я загадаю тебе смешную загадку?",
+      "Ой, давай улетим в солнечную сказку! Там живут добрые зверята. Поиграем в загадки?",
+      "А знаешь, что поднимает настроение? Игра! Хочешь загадку про пушистого зверька?"
+    ]);
+  }
+  // явные команды
+  if (has(t, ["загад"])) return startRiddle();
+  if (has(t, ["сказк","сказоч","story"])) return startTale();
+  if (has(t, ["перевод","переведи","по-английски","по английски","английск","translate"])) return startTranslate();
+  if (has(t, ["пока","до свидания","goodbye","bye","спать пора"])){ D.mode = null; return "Пока-пока! Было очень весело с тобой играть! Приходи скорее снова, я буду ждать!"; }
+
+  // режимы
+  if (D.mode === "riddle" && D.riddle){
+    if (has(t, D.riddle.k)){
+      D.mode = "riddleAsk";
+      return `Правильно! Это ${D.riddle.a}! Ты настоящая умница${nameBit()}! Загадать ещё одну загадку?`;
+    }
+    if (has(t, ["не знаю","сдаюсь","подскаж","помоги","don t know","dont know","help"]) || D.tries >= 1){
+      if (D.tries === 0){ D.tries++; return D.riddle.h + " Как ты думаешь, что это?"; }
+      D.mode = "riddleAsk";
+      return `Это ${D.riddle.a}! Ничего страшного, загадка была хитрая. Хочешь ещё одну?`;
+    }
+    D.tries++;
+    return "Хм, интересная мысль, но нет! " + D.riddle.h + " Попробуй ещё раз!";
+  }
+  if (D.mode === "riddleAsk"){
+    if (hasWord(t, NO)){ D.mode = null; D.offer = "tale"; return "Хорошо! Тогда, может, сочиним сказку вместе?"; }
+    return startRiddle();
+  }
+  if (D.mode === "tale" && D.tale){
+    const echo = raw.length < 60 ? `«${raw.trim()}» — ${praise().toLowerCase()} ` : praise() + " ";
+    const step = D.tale.steps[D.step++];
+    if (D.step >= D.tale.steps.length){ D.mode = null; D.offer = "riddle"; }
+    return echo + step;
+  }
+  if (D.mode === "translate") return translateReply(raw);
+
+  // ответ на предложение
+  if (D.offer && hasWord(t, YES)){
+    const o = D.offer; D.offer = null;
+    if (o === "riddle") return startRiddle();
+    if (o === "tale") return startTale();
+  }
+  if (D.offer && hasWord(t, NO)){
+    D.offer = null; return "Хорошо! Тогда расскажи мне, во что ты любишь играть?";
+  }
+  D.offer = null;
+
+  // английские вкрапления
+  const en = findEnglish(raw);
+  if (en && !["yes","no","hello","please","thank","thanks"].includes(en)){
+    const ru = DICT[en];
+    return `О, ${en}! По-русски мы говорим «${ru}»! Скажи вместе со мной: ${ru}! А что ещё ты знаешь про ${en === "ice cream" ? "мороженое" : "это"}?`;
+  }
+
+  // знакомство и болтовня
+  const m = t.match(/меня зовут ([а-яa-z-]+)/) || t.match(/my name is ([a-z-]+)/);
+  if (m){ D.name = m[1].charAt(0).toUpperCase() + m[1].slice(1); return `Какое красивое имя, ${D.name}! Очень приятно познакомиться! Во что поиграем: в загадки или в сказку?`; }
+  if (has(t, ["привет","здравству","hello","hi ","хай","добрый день","доброе утро","hey"]) || t === "hi")
+    return pick(["Привет-привет! Я так рад тебя видеть! Как у тебя дела?", "Приветик! Я примчался к тебе быстрее ветра! Что ты сегодня делала?", "Привет! Ура, ты пришла! Хочешь загадку или сказку?"]);
+  if (has(t, ["как тебя зовут","ты кто","кто ты","твое имя","your name"])) return "Я Спиди, самый быстрый ёжик на свете! А как зовут тебя?";
+  if (has(t, ["как дела","как ты","how are you"])) return "У меня всё отлично, я сегодня обежал весь лес! А как твои дела?";
+  if (has(t, ["сколько тебе лет","how old"])) return "Мне столько лет, сколько иголок на ёлочке, шучу! А тебе сколько лет?";
+  if (has(t, ["хорошо","отлично","супер","good","great","нормально","прекрасно"])) return pick(["Ура, я очень рад! А что сегодня было самое интересное?", "Здорово! А давай поиграем? Загадка или сказка?"]);
+  if (has(t, ["спасибо","thank"])) return "Пожалуйста! Мне так нравится с тобой болтать! Поиграем ещё?";
+  if (has(t, ["быстр","бега","скорост","fast","run"])) return "Я бегаю так быстро, что ветер не успевает за мной! А ты быстро бегаешь? Давай посоревнуемся: кто быстрее скажет слово «колобок»?";
+  if (has(t, ["лет ","год"]) && /\d/.test(t)) return "Ого, какая ты уже большая! А что ты больше всего любишь делать?";
+
+  const ANIMALS = {"кош":"кошечки умеют мурлыкать, как маленький моторчик","кот":"котики умеют мурлыкать, как маленький моторчик","собак":"собачки виляют хвостиком, когда радуются","щен":"щенки обожают играть с мячиком","заяц":"зайчики умеют прыгать очень далеко","зайч":"зайчики умеют прыгать очень далеко","белк":"белочки прячут орешки на зиму","лис":"у лисички самый пушистый рыжий хвост","медвед":"мишки обожают сладкий мёд","лошад":"лошадки умеют спать стоя","единорог":"у единорога волшебный рог, который сияет радугой","дельфин":"дельфины умеют улыбаться и прыгать из воды","пингвин":"пингвины катаются по льду на животиках","слон":"слоны умеют набирать воду хоботом, как из душа","жираф":"у жирафа самая длинная шея на свете","рыб":"рыбки умеют спать с открытыми глазками","птиц":"птички поют песенки по утрам","бабоч":"бабочки пробуют цветы лапками","ёж":"ёжики сворачиваются в колючий клубочек","еж":"ёжики сворачиваются в колючий клубочек"};
+  for (const k in ANIMALS){ if (t.includes(k)) return `О, я знаю интересное! ${ANIMALS[k].charAt(0).toUpperCase() + ANIMALS[k].slice(1)}! А какое твоё самое любимое животное?`; }
+  if (has(t, ["морожен","торт","конфет","шоколад","пицц","печень","блин","сок","вкусн","яблок","банан","клубник","кушать","есть хочу"]))
+    return pick(["Ммм, как вкусно! Я больше всего люблю яблочки и грибочки. А какая твоя самая любимая вкусняшка?", "Вкусняшки — это здорово! Давай представим, что мы печём волшебный торт. Какого он будет цвета?"]);
+  if (has(t, ["игра","играть","поигра","play","game"])) { D.offer = "riddle"; return "Ура, играем! Хочешь, я загадаю тебе загадку? Или скажи «сказка», и мы сочиним сказку!"; }
+  if (has(t, ["мам","пап","бабуш","дедуш","сестр","брат","друг","подруж"])) return "Как здорово, что у тебя есть такие любимые люди! А во что вы любите играть вместе?";
+  if (has(t, ["школ","садик","класс","учител"])) return "В школе так интересно! А какой урок тебе нравится больше всего?";
+  if (hasWord(t, ["да","ага","угу","yes"])) { D.offer = "riddle"; return "Отлично! Тогда давай поиграем! Загадать тебе загадку?"; }
+  if (hasWord(t, ["нет","no","неа"])) return "Хорошо! А что тебе хочется: послушать сказку, отгадать загадку или узнать новое русское слово?";
+  if (/^[a-z\s-]+$/.test(t)){
+    D.offer = "translate";
+    return "Ой, это по-английски! Давай скажем это по-русски вместе! Хочешь поиграть в волшебного переводчика? Скажи «да»!";
+  }
+  D.offer = pick(["riddle","tale"]);
+  return pick([
+    "Как интересно! Расскажи мне ещё! А может, поиграем? Загадку или сказку?",
+    "Ух ты! Знаешь, а я сегодня видел в лесу радугу! А ты любишь радугу? Какой цвет твой любимый?",
+    "Здорово! А давай придумаем что-нибудь волшебное? Хочешь сказку?",
+    `Вот это да${nameBit()}! А хочешь, я загадаю тебе хитрую загадку?`
+  ]);
+}
+
+/* ================== НАСТРОЙКИ (окно) ================== */
+function fillSettings(){
+  $("sKey").value = cfg.key; $("sModel").value = cfg.model; $("sTts").value = cfg.tts;
+  $("sVoice").value = cfg.voice || ""; $("sTtsKey").value = cfg.ttsKey; $("sGVoice").value = cfg.gVoice; $("sGemVoice").value = cfg.gemVoice;
+  $("sPitch").value = cfg.pitch; $("sRate").value = cfg.rate; $("sAuto").checked = cfg.autoListen;
+  $("pitchVal").textContent = cfg.pitch; $("rateVal").textContent = cfg.rate; toggleTtsBoxes();
+}
+function readSettings(){
+  const oldKey = cfg.key;
+  cfg.key = $("sKey").value.trim(); cfg.model = $("sModel").value.trim() || DEFAULT_MODEL;
+  cfg.tts = $("sTts").value; cfg.voice = $("sVoice").value; cfg.ttsKey = $("sTtsKey").value.trim();
+  cfg.gVoice = $("sGVoice").value; cfg.gemVoice = $("sGemVoice").value; cfg.pitch = parseFloat($("sPitch").value); cfg.rate = parseFloat($("sRate").value);
+  cfg.autoListen = $("sAuto").checked;
+  if (oldKey !== cfg.key) lastInteractionId = null;
+  saveCfg(); updateBadge();
+}
+function toggleTtsBoxes(){ const m = $("sTts").value; $("googleVoiceBox").style.display = m === "google" ? "block" : "none"; $("gemVoiceBox").style.display = (m === "gemini" || m === "auto") ? "block" : "none"; $("browserVoiceBox").style.display = (m === "browser" || m === "auto") ? "block" : "none"; }
+$("gear").addEventListener("click", () => { stopListening(true); fillSettings(); $("settings").classList.add("open"); });
+$("closeSettings").addEventListener("click", () => { readSettings(); $("settings").classList.remove("open"); });
+$("settings").addEventListener("click", e => { if (e.target.id === "settings"){ readSettings(); $("settings").classList.remove("open"); } });
+$("sTts").addEventListener("change", toggleTtsBoxes);
+$("sPitch").addEventListener("input", e => $("pitchVal").textContent = e.target.value);
+$("sRate").addEventListener("input", e => $("rateVal").textContent = e.target.value);
+$("showKey").addEventListener("click", () => { const i=$("sKey"); i.type = i.type === "password" ? "text" : "password"; });
+$("testVoice").addEventListener("click", () => { readSettings(); say("Привет! Я ёжик Спиди! Так звучит мой голос.", {listenAfter:false}); });
+$("resetChat").addEventListener("click", () => { lastInteractionId = null; Object.assign(D, {mode:null, riddle:null, tale:null, offer:null}); toast("Разговор начат заново"); });
+$("testKey").addEventListener("click", async () => {
+  readSettings();
+  const st = $("keyStatus");
+  if (!cfg.key){ st.className = "status err"; st.textContent = "Сначала вставьте ключ."; return; }
+  st.className = "status"; st.textContent = "Проверяю…";
+  try {
+    const out = await geminiCall(cfg.model, [{role:"user", parts:[{text:"Поздоровайся одним коротким предложением."}]}]);
+    st.className = "status ok"; st.textContent = "Ключ работает! Спиди говорит: " + cleanText(out);
+  } catch(e){
+    let tip = "";
+    if (e.status === 404) tip = " Попробуйте модель gemini-3.5-flash-lite.";
+    if (e.status === 403) tip = " Проверьте, что в проекте включён Generative Language API и у ключа нет ограничения по сайтам (HTTP referrers).";
+    if (e.status === 429) tip = " Превышен лимит запросов, попробуйте позже.";
+    st.className = "status err"; st.textContent = "Ошибка " + (e.message || e) + "." + tip;
+  }
+});
+
+/* ================== ПЕРЕНОС НА ТЕЛЕФОН ================== */
+const SITE_URL = location.protocol === "https:" ? location.origin + location.pathname : "https://yellowlobster-tech.github.io/speedy/";
+(function importFromHash(){
+  const m = location.hash.match(/[#&]k=([^&]+)/);
+  if (!m) return;
+  try {
+    cfg.key = decodeURIComponent(m[1]);
+    const v = location.hash.match(/[#&]v=([^&]+)/); if (v) cfg.gemVoice = decodeURIComponent(v[1]);
+    saveCfg(); updateBadge();
+    history.replaceState(null, "", location.pathname);
+    setTimeout(() => toast("Ключ сохранён на этом устройстве. Спиди в умном режиме!", 5000), 300);
+  } catch(e){}
+})();
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+$("qrBtn").addEventListener("click", async () => {
+  readSettings();
+  const box = $("qrBox");
+  if (!cfg.key){ box.innerHTML = '<div class="status err">Сначала вставьте ключ Gemini выше.</div>'; return; }
+  try {
+    if (!window.qrcode) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js");
+    const url = SITE_URL + "#k=" + encodeURIComponent(cfg.key) + "&v=" + encodeURIComponent(cfg.gemVoice || "Puck");
+    const qr = qrcode(0, "M"); qr.addData(url); qr.make();
+    box.innerHTML = qr.createSvgTag({cellSize: 5, margin: 3, scalable: true}) + '<div class="note">Адрес Спиди: ' + SITE_URL + '</div>';
+    const svgEl = box.querySelector("svg"); if (svgEl){ svgEl.style.width = "240px"; svgEl.style.height = "240px"; svgEl.style.background = "#fff"; }
+  } catch(e){ box.innerHTML = '<div class="status err">Не удалось загрузить генератор QR-кода. Проверьте интернет.</div>'; }
+});
+
+/* ================== СТАРТ ================== */
+$("startBtn").addEventListener("click", async () => {
+  $("start").style.display = "none";
+  try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch(e){}
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch(e){}
+  if (synth && !voices.length) loadVoices();
+  A.jump = performance.now()/1000;
+  const hello = cfg.key
+    ? "Привет! Я Спиди, самый быстрый ёжик на свете! Я так рад тебя видеть! Как тебя зовут?"
+    : "Привет! Я Спиди, самый быстрый ёжик на свете! Давай дружить и играть! Как тебя зовут?";
+  D.offer = null;
+  say(hello);
+});
+document.addEventListener("keydown", e => { if (e.code === "Space" && document.activeElement.tagName !== "INPUT" && !$("settings").classList.contains("open")){ e.preventDefault(); micBtn.click(); } });
+</script>
+</body>
+</html>
