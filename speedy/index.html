@@ -24,14 +24,14 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:"Nunito","Trebuchet M
 #stage:before{content:"";position:absolute;left:50%;top:52%;width:80%;height:80%;transform:translate(-50%,-50%) scale(.8);border-radius:50%;background:radial-gradient(circle,rgba(120,255,170,.55),rgba(120,255,170,0) 70%);opacity:0;transition:opacity .3s, transform .3s;pointer-events:none}
 #stage.listen:before{opacity:1;transform:translate(-50%,-50%) scale(1.15);animation:glow 1.2s ease-in-out infinite alternate}
 @keyframes glow{to{transform:translate(-50%,-50%) scale(1.3)}}
-#speedy{height:68vh;width:auto;max-width:94vw;overflow:visible;cursor:pointer;filter:drop-shadow(0 18px 18px rgba(20,60,120,.18));-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#speedy{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;height:68vh;width:auto;max-width:94vw;overflow:visible;cursor:pointer;filter:drop-shadow(0 18px 18px rgba(20,60,120,.18));-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 #panel{width:min(760px,96vw);display:flex;flex-direction:column;gap:1vh}
 #row{display:flex;gap:14px;align-items:center}
 #bubble{flex:1;position:relative;background:rgba(255,255,255,.82);border-radius:22px;padding:10px 18px;min-height:64px;box-shadow:0 8px 24px rgba(30,70,140,.12)}
 #userLine{font-size:14px;color:#5b6b8c;min-height:1.2em}
 #userLine b{color:#3a59c9}
 #speech{font-size:clamp(15px,2.1vh,22px);line-height:1.35;font-weight:700}
-#mic{flex:0 0 auto;width:clamp(84px,12vh,130px);height:clamp(84px,12vh,130px);border-radius:50%;border:6px solid #fff;background:radial-gradient(circle at 35% 30%,#ff8a8f,#e8343b);color:#fff;font-size:clamp(38px,5.5vh,60px);cursor:pointer;box-shadow:0 8px 20px rgba(232,52,59,.4);transition:transform .15s;touch-action:manipulation}
+#mic{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;flex:0 0 auto;width:clamp(84px,12vh,130px);height:clamp(84px,12vh,130px);border-radius:50%;border:6px solid #fff;background:radial-gradient(circle at 35% 30%,#ff8a8f,#e8343b);color:#fff;font-size:clamp(38px,5.5vh,60px);cursor:pointer;box-shadow:0 8px 20px rgba(232,52,59,.4);transition:transform .15s;touch-action:manipulation}
 #mic:active{transform:scale(.94)}
 #mic.on{animation:pulse 1.1s infinite;background:radial-gradient(circle at 35% 30%,#7bed9f,#20bf6b)}
 #mic.wait{animation:wobble 1.6s infinite}
@@ -2705,7 +2705,7 @@ function setState(s){
   const mb = document.getElementById("mic"); if (mb) mb.classList.remove("wait");
   $("thought").style.display = (s === "thinking") ? "flex" : "none";
 }
-svg.addEventListener("click", () => { A.jump = performance.now()/1000; if (A.state === "listening") return; silenceCount = 0; startListening(); });
+
 function onPointer(e){ const p = e.touches ? e.touches[0] : e; A.mouse = {x:p.clientX, y:p.clientY}; A.lastMouse = performance.now(); }
 window.addEventListener("mousemove", onPointer); window.addEventListener("touchstart", onPointer, {passive:true});
 
@@ -2938,7 +2938,7 @@ async function say(text, {listenAfter = true} = {}){
   } finally {
     if (token === speakToken){
       setState("idle");
-      if (listenAfter && cfg.autoListen && recogSupported) setTimeout(() => { if (A.state === "idle" && token === speakToken) startListening(); }, 350);
+      if (listenAfter && cfg.autoListen && recogSupported && !useGeminiEars()) setTimeout(() => { if (A.state === "idle" && token === speakToken) startListening(); }, 350);
     }
   }
 }
@@ -3004,7 +3004,106 @@ function startListening(){
 function stopListening(silent){
   if (recog && listening){ silentStop = !!silent; try { recog.abort(); } catch(e){} }
 }
-micBtn.addEventListener("click", () => { silenceCount = 0; if (listening){ stopListening(true); setState("idle"); } else startListening(); });
+
+/* ================== НАЖАЛ — СКАЗАЛ — ОТПУСТИЛ ================== */
+// С ключом Gemini: записываем голос сами и отправляем в Gemini (он и распознаёт, и отвечает).
+// Без ключа: встроенное распознавание браузера.
+const REC = { on:false, mode:"", t0:0, stream:null, src:null, proc:null, mute:null, chunks:[], rate:48000, speech:false, lastLoud:0, peak:0 };
+function useGeminiEars(){ return !!cfg.key && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
+async function recStart(){
+  if (REC.on) return;
+  stopSpeaking(); busy++;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") await audioCtx.resume();
+    if (!REC.stream || REC.stream.getAudioTracks().every(t => t.readyState === "ended"))
+      REC.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
+  } catch(e){ toast("Разреши доступ к микрофону, чтобы Спиди тебя слышал.", 6000); return; }
+  REC.src = audioCtx.createMediaStreamSource(REC.stream);
+  REC.proc = audioCtx.createScriptProcessor(4096, 1, 1);
+  REC.mute = audioCtx.createGain(); REC.mute.gain.value = 0;
+  REC.chunks = []; REC.rate = audioCtx.sampleRate; REC.speech = false; REC.peak = 0; REC.t0 = performance.now(); REC.lastLoud = REC.t0;
+  REC.proc.onaudioprocess = ev => {
+    if (!REC.on) return;
+    const d = ev.inputBuffer.getChannelData(0); REC.chunks.push(new Float32Array(d));
+    let s = 0; for (let i = 0; i < d.length; i++) s += d[i]*d[i];
+    const rms = Math.sqrt(s / d.length), now = performance.now();
+    REC.peak = Math.max(REC.peak, rms);
+    if (rms > 0.025){ REC.speech = true; REC.lastLoud = now; }
+    if (REC.mode === "tap"){
+      if (REC.speech && now - REC.lastLoud > 1300) recStop();
+      else if (!REC.speech && now - REC.t0 > 7000) recStop();
+    }
+    if (now - REC.t0 > 20000) recStop();
+  };
+  REC.src.connect(REC.proc); REC.proc.connect(REC.mute); REC.mute.connect(audioCtx.destination);
+  REC.on = true; REC.mode = REC.down ? "hold" : "tap";   // если уже отпустила, пока спрашивали разрешение — слушаем до паузы
+  micBtn.classList.add("on"); setState("listening"); showUser("");
+}
+function recStop(){
+  if (!REC.on) return;
+  REC.on = false;
+  try { REC.src.disconnect(); REC.proc.disconnect(); REC.mute.disconnect(); } catch(e){}
+  micBtn.classList.remove("on");
+  const len = REC.chunks.reduce((n, c) => n + c.length, 0), dur = len / REC.rate;
+  if (dur < 0.4 || !REC.speech){ setState("idle"); if (dur >= 0.4) showUser("(Спиди ничего не услышал, попробуй ещё раз)"); return; }
+  const all = new Float32Array(len); let o = 0; REC.chunks.forEach(c => { all.set(c, o); o += c.length; });
+  handleAudio(encodeWav(downsample(all, REC.rate, 16000), 16000));
+}
+function downsample(buf, from, to){
+  if (from === to) return buf;
+  const ratio = from / to, n = Math.floor(buf.length / ratio), out = new Float32Array(n);
+  for (let i = 0; i < n; i++){ const a = Math.floor(i*ratio), b = Math.min(buf.length, Math.floor((i+1)*ratio)); let s = 0; for (let j = a; j < b; j++) s += buf[j]; out[i] = s / Math.max(1, b - a); }
+  return out;
+}
+function encodeWav(samples, rate){
+  const buf = new ArrayBuffer(44 + samples.length*2), v = new DataView(buf);
+  const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o+i, str.charCodeAt(i)); };
+  w(0,"RIFF"); v.setUint32(4, 36 + samples.length*2, true); w(8,"WAVE"); w(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,rate,true); v.setUint32(28,rate*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,"data"); v.setUint32(40, samples.length*2, true);
+  let gain = 1; let mx = 0; for (let i = 0; i < samples.length; i++) mx = Math.max(mx, Math.abs(samples[i])); if (mx > 0 && mx < 0.5) gain = 0.5 / mx;
+  for (let i = 0; i < samples.length; i++){ const x = Math.max(-1, Math.min(1, samples[i]*gain)); v.setInt16(44 + i*2, x < 0 ? x*0x8000 : x*0x7FFF, true); }
+  const bytes = new Uint8Array(buf); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+const AUDIO_INSTR = "Это голосовое сообщение девочки (по-русски, иногда с английскими словами). Сначала одной строкой запиши, что она сказала, в формате [[она: ...]], а с новой строки дай свой ответ ей по всем своим правилам.";
+async function handleAudio(b64){
+  const my = ++busy;
+  setState("thinking");
+  const el0 = document.getElementById("errLine"); if (el0) el0.textContent = "";
+  let reply = "";
+  try {
+    const out = await askGemini([{ type:"audio", data:b64, mime_type:"audio/wav" }, { type:"text", text: AUDIO_INSTR }]);
+    const m = out.match(/\[\[\s*она\s*:\s*([\s\S]*?)\]\]/i);
+    if (m){ showUser(m[1].trim()); reply = out.replace(m[0], "").trim(); } else reply = out.replace(/\[\[[\s\S]*?\]\]/g, "").trim();
+  } catch(e){
+    console.warn(e); lastGemErr = String(e.message||e); showErr("Gemini: " + lastGemErr);
+    reply = "Ой, у меня что-то с ушками, я тебя не расслышал. Скажи ещё раз, пожалуйста!";
+  }
+  if (my !== busy) return;
+  say(reply || "Хм, повтори, пожалуйста!", {listenAfter:false});
+}
+function pressStart(e){
+  if (e) e.preventDefault();
+  A.jump = performance.now()/1000;
+  if (!useGeminiEars()){ silenceCount = 0; if (listening){ stopListening(true); setState("idle"); } else startListening(); return; }
+  if (REC.on){ recStop(); return; }          // второе касание в режиме «тап» — стоп
+  REC.pressT = performance.now(); REC.down = true;
+  recStart();
+}
+function pressEnd(){
+  REC.down = false;
+  if (!useGeminiEars() || !REC.on || REC.mode !== "hold") return;
+  if (performance.now() - REC.pressT > 450) recStop();   // держала и отпустила
+  else REC.mode = "tap";                                  // короткое касание: слушаем до паузы
+}
+[micBtn, svg].forEach(el => {
+  el.addEventListener("pointerdown", pressStart);
+  el.addEventListener("pointerup", pressEnd);
+  el.addEventListener("pointercancel", pressEnd);
+  el.addEventListener("pointerleave", pressEnd);
+  el.addEventListener("contextmenu", e => e.preventDefault());
+});
 
 /* ================== МОЗГ ================== */
 let history = [];  // не используется (история хранится на сервере Gemini)
@@ -3073,7 +3172,8 @@ async function askGemini(text){
       catch(e){ if (lastInteractionId && e.status === 400){ lastInteractionId = null; delete body.previous_interaction_id; data = await interactions(body); } else throw e; }
       lastInteractionId = data.id || null;
       const out = (data.output_text || stepsOf(data, "text").map(c => c.text || "").join(" ")).trim();
-      return out || "Ой, давай лучше поиграем во что-нибудь весёлое! Хочешь загадку или сказку?";
+      if (!out) throw Object.assign(new Error("пустой ответ модели " + model), {status: 0});
+      return out;
     } catch(e){
       lastErr = e;
       if (e.status === 401 || (e.status === 403 && /key|denied|permission/i.test(e.message) && !/model/i.test(e.message))) break;
@@ -3418,7 +3518,8 @@ $("startBtn").addEventListener("click", async () => {
   D.offer = null;
   say(hello);
 });
-document.addEventListener("keydown", e => { if (e.code === "Space" && document.activeElement.tagName !== "INPUT" && !$("settings").classList.contains("open")){ e.preventDefault(); micBtn.click(); } });
+document.addEventListener("keydown", e => { if (e.code === "Space" && !e.repeat && document.activeElement.tagName !== "INPUT" && !$("settings").classList.contains("open")){ e.preventDefault(); pressStart(); } });
+document.addEventListener("keyup", e => { if (e.code === "Space" && document.activeElement.tagName !== "INPUT"){ pressEnd(); } });
 </script>
 </body>
 </html>
