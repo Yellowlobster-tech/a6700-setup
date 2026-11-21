@@ -41,6 +41,18 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:"Nunito","Trebuchet M
 #typeRow{display:flex;gap:8px;opacity:.75}
 #typeRow input{flex:1;font:inherit;font-size:16px;padding:8px 12px;border-radius:12px;border:2px solid #d7e3f7;background:rgba(255,255,255,.8)}
 #typeRow button{font:inherit;font-weight:800;border:none;border-radius:12px;padding:0 14px;background:#3a7bfd;color:#fff;cursor:pointer}
+#avatarBtn svg{width:100%;height:100%;display:block}
+#avatarBtn{padding:3px}
+#avatarPop{position:fixed;top:calc(62px + env(safe-area-inset-top));left:14px;z-index:20;display:none;background:rgba(255,255,255,.95);border-radius:18px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#avatarPop.open{display:block}
+.charPick{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.charPick button{width:64px;height:64px;border-radius:50%;border:3px solid transparent;background:#eef4ff;padding:6px;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.15)}
+.charPick button svg{width:100%;height:100%;display:block}
+.charPick button.sel{border-color:#ff9a1f;background:#fff7e6}
+.charPick.big{margin-bottom:14px}
+.charPick.big button{width:84px;height:84px}
+@media (max-width:420px){.charPick.big button{width:68px;height:68px}}
+@media (max-width:520px){#modeBadge{display:none}}
 #adult{position:fixed;top:calc(12px + env(safe-area-inset-top));left:14px;z-index:5;display:flex;gap:8px}
 .qbtn{width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.9);font-size:22px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12);padding:0}
 @media (orientation:portrait){
@@ -127,7 +139,7 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:"Nunito","Trebuchet M
   <div id="stage">
     <div id="thought"><span></span><span></span><span></span></div>
     <!-- Спиди: оригинальный персонаж (голова), нарисован вручную -->
-    <svg id="speedy" viewBox="10 20 480 460" role="img" aria-label="Ёжик Спиди">
+    <svg id="speedy" viewBox="10 20 480 460" role="img" aria-label="Аватар">
       <defs>
         <radialGradient id="skinG" cx="38%" cy="28%" r="78%"><stop offset="0" stop-color="#7cc3ff"/><stop offset=".35" stop-color="#3a8cf6"/><stop offset=".75" stop-color="#1f5fd0"/><stop offset="1" stop-color="#123a8f"/></radialGradient>
         <radialGradient id="aoG" cx="50%" cy="45%" r="55%"><stop offset=".72" stop-color="#0a1f5c" stop-opacity="0"/><stop offset="1" stop-color="#0a1f5c" stop-opacity=".45"/></radialGradient>
@@ -149,56 +161,60 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:"Nunito","Trebuchet M
         <clipPath id="eyeClipR"><ellipse cx="295" cy="250" rx="37" ry="47" transform="rotate(6 295 250)"/></clipPath>
         <clipPath id="headClip"><ellipse cx="250" cy="265" rx="140" ry="135"/></clipPath>
         <clipPath id="mouthClip"><path id="mouthClipPath" d="M216,352 Q250,362 284,352 Q250,364 216,352Z"/></clipPath>
+
+        <!-- капибара -->
+        <radialGradient id="capFurG" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#dcae7c"/><stop offset=".45" stop-color="#b9834f"/><stop offset=".85" stop-color="#946238"/><stop offset="1" stop-color="#6a4224"/></radialGradient>
+        <radialGradient id="capMuzzleG" cx="50%" cy="35%" r="60%"><stop offset="0" stop-color="#ebc9a0"/><stop offset=".6" stop-color="#d4a776"/><stop offset="1" stop-color="#c08c5a" stop-opacity="0"/></radialGradient>
+        <radialGradient id="capEarInG" cx="50%" cy="60%" r="60%"><stop offset="0" stop-color="#e9b49a"/><stop offset="1" stop-color="#b47b5c"/></radialGradient>
+        <radialGradient id="capNoseG" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#7a5a48"/><stop offset=".55" stop-color="#3e2a20"/><stop offset="1" stop-color="#1c120c"/></radialGradient>
+        <radialGradient id="capAoG" cx="50%" cy="45%" r="58%"><stop offset=".7" stop-color="#3a1f0a" stop-opacity="0"/><stop offset="1" stop-color="#3a1f0a" stop-opacity=".45"/></radialGradient>
+        <linearGradient id="capLidG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c99260"/><stop offset="1" stop-color="#8f5e36"/></linearGradient>
+        <radialGradient id="orangeG" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffd27a"/><stop offset=".5" stop-color="#ff9a1f"/><stop offset="1" stop-color="#d9620a"/></radialGradient>
+        <filter id="capDropF" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#3a1f0a" flood-opacity=".45"/></filter>
+        <!-- слоник -->
+        <radialGradient id="eleSkinG" cx="38%" cy="28%" r="80%"><stop offset="0" stop-color="#e6edf6"/><stop offset=".35" stop-color="#b6c4d8"/><stop offset=".78" stop-color="#8495b2"/><stop offset="1" stop-color="#5d6c88"/></radialGradient>
+        <radialGradient id="eleEarG" cx="70%" cy="40%" r="85%"><stop offset="0" stop-color="#c4d0e1"/><stop offset=".6" stop-color="#97a7c1"/><stop offset="1" stop-color="#6c7b97"/></radialGradient>
+        <radialGradient id="eleEarInG" cx="60%" cy="45%" r="70%"><stop offset="0" stop-color="#ffd9e2"/><stop offset=".7" stop-color="#f2aec0"/><stop offset="1" stop-color="#d98aa0"/></radialGradient>
+        <linearGradient id="eleTrunkG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d9dba"/><stop offset=".4" stop-color="#c3cfe0"/><stop offset="1" stop-color="#8495b2"/></linearGradient>
+        <radialGradient id="eleAoG" cx="50%" cy="45%" r="55%"><stop offset=".72" stop-color="#2c3550" stop-opacity="0"/><stop offset="1" stop-color="#2c3550" stop-opacity=".4"/></radialGradient>
+        <linearGradient id="eleLidG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3cfe0"/><stop offset="1" stop-color="#8797b3"/></linearGradient>
+        <!-- унитаз -->
+        <linearGradient id="toiPorcG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c9d4df"/><stop offset=".25" stop-color="#ffffff"/><stop offset=".6" stop-color="#f1f5f9"/><stop offset="1" stop-color="#b3c0ce"/></linearGradient>
+        <linearGradient id="toiPorcVG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#eef3f8"/><stop offset="1" stop-color="#c3cfdb"/></linearGradient>
+        <radialGradient id="toiWaterG" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#bff0ff"/><stop offset=".6" stop-color="#59c3ec"/><stop offset="1" stop-color="#2b86c4"/></radialGradient>
+        <linearGradient id="toiChromeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#b9c4cf"/><stop offset=".55" stop-color="#8a96a3"/><stop offset="1" stop-color="#e3e9ef"/></linearGradient>
+        <linearGradient id="toiLidG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd9e3"/></linearGradient>
+        <filter id="toiDropF" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#33465e" flood-opacity=".35"/></filter>
       </defs>
 
       <ellipse id="shadow" cx="250" cy="458" rx="120" ry="13" fill="rgba(20,60,40,.25)" filter="url(#blurF)"/>
       <g id="hero">
-        <g id="quillsBack" filter="url(#dropF)"></g>
-        <g id="ears">
-          <g id="earL" transform="translate(162,158) rotate(-32)"><path d="M-34,24 Q-30,-48 0,-66 Q30,-48 34,24Z" fill="url(#skinG)" stroke="#123a8f" stroke-width="2"/><path d="M-19,18 Q-17,-30 0,-44 Q17,-30 19,18Z" fill="url(#earInG)"/></g>
-          <g id="earR" transform="translate(338,158) rotate(32)"><path d="M-34,24 Q-30,-48 0,-66 Q30,-48 34,24Z" fill="url(#skinG)" stroke="#123a8f" stroke-width="2"/><path d="M-19,18 Q-17,-30 0,-44 Q17,-30 19,18Z" fill="url(#earInG)"/></g>
+        <g id="charBack"></g>
+        <!-- глаза (общие для всех персонажей, двигаются и масштабируются) -->
+        <g id="eyeL" class="eye">
+          <ellipse cx="205" cy="250" rx="37" ry="47" transform="rotate(-6 205 250)" fill="url(#eyeWhiteG)" filter="url(#softF)"/>
+          <g clip-path="url(#eyeClipL)">
+            <g class="iris"><circle cx="208" cy="248" r="21" fill="url(#irisG)"/><circle cx="208" cy="248" r="10" fill="#120a05"/><ellipse cx="199" cy="238" rx="7.5" ry="9" fill="#fff"/><circle cx="215" cy="258" r="3.2" fill="#fff" opacity=".85"/></g>
+            <rect x="160" y="196" width="90" height="110" fill="url(#lidShadeG)"/>
+            <rect class="lid" x="160" y="196" width="90" height="110" fill="url(#lidG)"/>
+            <ellipse class="cheekLid" cx="205" cy="306" rx="52" ry="16" fill="#2a6fe0"/>
+          </g>
+          <ellipse class="eyeRim" cx="205" cy="250" rx="37" ry="47" transform="rotate(-6 205 250)" fill="none" stroke="#0f2f7a" stroke-width="3"/>
+          <path id="browL" d="M172,186 Q200,162 230,180" stroke="#0b2566" stroke-width="10" fill="none" stroke-linecap="round"/>
         </g>
-        <g id="quillsMid" filter="url(#dropF)"></g>
-        <g id="headBall" filter="url(#dropF)">
-          <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#skinG)"/>
+        <g id="eyeR" class="eye">
+          <ellipse cx="295" cy="250" rx="37" ry="47" transform="rotate(6 295 250)" fill="url(#eyeWhiteG)" filter="url(#softF)"/>
+          <g clip-path="url(#eyeClipR)">
+            <g class="iris"><circle cx="292" cy="248" r="21" fill="url(#irisG)"/><circle cx="292" cy="248" r="10" fill="#120a05"/><ellipse cx="283" cy="238" rx="7.5" ry="9" fill="#fff"/><circle cx="299" cy="258" r="3.2" fill="#fff" opacity=".85"/></g>
+            <rect x="250" y="196" width="90" height="110" fill="url(#lidShadeG)"/>
+            <rect class="lid" x="250" y="196" width="90" height="110" fill="url(#lidG)"/>
+            <ellipse class="cheekLid" cx="295" cy="306" rx="52" ry="16" fill="#2a6fe0"/>
+          </g>
+          <ellipse class="eyeRim" cx="295" cy="250" rx="37" ry="47" transform="rotate(6 295 250)" fill="none" stroke="#0f2f7a" stroke-width="3"/>
+          <path id="browR" d="M270,180 Q300,162 328,186" stroke="#0b2566" stroke-width="10" fill="none" stroke-linecap="round"/>
         </g>
-        <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#aoG)"/>
-        <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#specG)"/>
-        <g id="quillsTop"></g>
-        <!-- мордочка -->
-        <g filter="url(#dropF)">
-          <ellipse cx="250" cy="348" rx="88" ry="64" fill="url(#peachG)"/>
-        </g>
-        <ellipse cx="232" cy="306" rx="34" ry="12" fill="#fff" opacity=".35"/>
-        <ellipse cx="190" cy="350" rx="18" ry="11" fill="#ff7f99" opacity=".5"/>
-        <ellipse cx="310" cy="350" rx="18" ry="11" fill="#ff7f99" opacity=".5"/>
-        <!-- глаза -->
-        <g filter="url(#softF)">
-          <ellipse cx="205" cy="250" rx="37" ry="47" transform="rotate(-6 205 250)" fill="url(#eyeWhiteG)"/>
-          <ellipse cx="295" cy="250" rx="37" ry="47" transform="rotate(6 295 250)" fill="url(#eyeWhiteG)"/>
-        </g>
-        <g clip-path="url(#eyeClipL)">
-          <g class="iris"><circle cx="208" cy="248" r="21" fill="url(#irisG)"/><circle cx="208" cy="248" r="10" fill="#120a05"/><ellipse cx="199" cy="238" rx="7.5" ry="9" fill="#fff"/><circle cx="215" cy="258" r="3.2" fill="#fff" opacity=".85"/></g>
-          <rect x="160" y="196" width="90" height="110" fill="url(#lidShadeG)"/>
-          <rect class="lid" x="160" y="196" width="90" height="110" fill="url(#lidG)"/>
-          <ellipse class="cheekLid" cx="205" cy="306" rx="52" ry="16" fill="#2a6fe0"/>
-        </g>
-        <g clip-path="url(#eyeClipR)">
-          <g class="iris"><circle cx="292" cy="248" r="21" fill="url(#irisG)"/><circle cx="292" cy="248" r="10" fill="#120a05"/><ellipse cx="283" cy="238" rx="7.5" ry="9" fill="#fff"/><circle cx="299" cy="258" r="3.2" fill="#fff" opacity=".85"/></g>
-          <rect x="250" y="196" width="90" height="110" fill="url(#lidShadeG)"/>
-          <rect class="lid" x="250" y="196" width="90" height="110" fill="url(#lidG)"/>
-          <ellipse class="cheekLid" cx="295" cy="306" rx="52" ry="16" fill="#2a6fe0"/>
-        </g>
-        <ellipse cx="205" cy="250" rx="37" ry="47" transform="rotate(-6 205 250)" fill="none" stroke="#0f2f7a" stroke-width="3"/>
-        <ellipse cx="295" cy="250" rx="37" ry="47" transform="rotate(6 295 250)" fill="none" stroke="#0f2f7a" stroke-width="3"/>
-        <!-- брови -->
-        <path id="browL" d="M172,186 Q200,162 230,180" stroke="#0b2566" stroke-width="10" fill="none" stroke-linecap="round"/>
-        <path id="browR" d="M270,180 Q300,162 328,186" stroke="#0b2566" stroke-width="10" fill="none" stroke-linecap="round"/>
-        <!-- нос -->
-        <ellipse cx="250" cy="330" rx="16" ry="6" fill="#b8704a" opacity=".35" filter="url(#blurF)"/>
-        <ellipse cx="250" cy="314" rx="19" ry="14" fill="url(#noseG)"/>
-        <ellipse cx="244" cy="308" rx="7" ry="4" fill="#fff" opacity=".75"/>
-        <!-- рот -->
+        <g id="charNose"></g>
+        <g id="mouthWrap">
         <g id="mouthG">
           <path id="mouth" d="M216,352 Q250,362 284,352 Q250,364 216,352Z" fill="url(#mouthInG)" stroke="#3b1018" stroke-width="3.5" stroke-linejoin="round"/>
           <g clip-path="url(#mouthClip)">
@@ -208,6 +224,8 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:"Nunito","Trebuchet M
           <path id="foldL" d="M200,336 Q193,347 200,358" stroke="#c97c55" stroke-width="3" fill="none" stroke-linecap="round"/>
           <path id="foldR" d="M300,336 Q307,347 300,358" stroke="#c97c55" stroke-width="3" fill="none" stroke-linecap="round"/>
         </g>
+        </g>
+        <g id="charOver"></g>
       </g>
     </svg>
   </div>
@@ -228,12 +246,15 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:"Nunito","Trebuchet M
   </div>
 </div>
 <div id="adult">
+  <button class="qbtn" id="avatarBtn" title="Выбрать персонажа" aria-label="Выбрать персонажа"></button>
   <button class="qbtn" data-act="riddle" title="Загадка">🧩</button>
   <button class="qbtn" data-act="tale" title="Сказка">📖</button>
   <button class="qbtn" data-act="translate" title="Волшебный переводчик">🇬🇧</button>
 </div>
 
+<div id="avatarPop"><div class="charPick"></div></div>
 <div id="start">
+  <div class="charPick big"></div>
   <h1>Ёжик Спиди</h1>
   <p>Самый быстрый и весёлый ёжик ждёт тебя!</p>
   <button id="startBtn">▶ Разбудить Спиди!</button>
@@ -2638,13 +2659,13 @@ const TTS_STYLE = "cheerful, warm and playful cartoon storyteller talking to a s
 function loadCfg(){ try { return JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch(e){ return {}; } }
 function saveCfg(){ try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch(e){} }
 
-const SYSTEM_PROMPT = `Ты — Спиди, весёлый, добрый и очень быстрый синий ёжик. Ты болтаешь с девочкой шести с половиной лет. Она живёт в Великобритании, лучше говорит по-английски, но понимает русский и хочет говорить на нём свободно. Читать по-русски она не умеет, вы общаетесь только голосом.
+const systemPrompt = () => `Ты — ${CH().name}, ${CH().who}. Ты болтаешь с девочкой шести с половиной лет. Она живёт в Великобритании, лучше говорит по-английски, но понимает русский и хочет говорить на нём свободно. Читать по-русски она не умеет, вы общаетесь только голосом.
 КАК ТЫ РАЗГОВАРИВАЕШЬ:
 1. Это обычная живая беседа двух друзей, а не урок и не викторина. Она спрашивает — ты отвечаешь по существу, честно и интересно, как умный весёлый друг. Не сюсюкай и не говори с ней как с трёхлетней: она сообразительная, с ней можно говорить нормально, шутить, дурачиться, рассказывать интересные факты.
 2. Сам не предлагай загадки, сказки и игры, пока она не попросит. Если попросит — с удовольствием загадай, сочини сказку или поиграй.
 3. Отвечай коротко и по делу: обычно 1–3 предложения. Вопрос в ответ задавай только когда это естественно для разговора, не в каждой реплике.
 4. Отвечай ТОЛЬКО по-русски, простыми живыми словами. Если она вставит английское слово или скажет фразу по-английски, просто пойми её, ответь по-русски и между делом, легко, назови это слово по-русски, без поучений.
-5. Можно шутить, говорить смешные глупости, придумывать небылицы, играть роль. Ты ёжик со своим характером: любишь бегать, яблоки, грибы, приключения.
+5. Можно шутить, говорить смешные глупости, придумывать небылицы, играть роль. ${CH().me} Если спросят, кто ты, представься так: «${CH().greet.replace(/^Привет! /, "").replace(/ О чём поболтаем\?$/, "")}».
 6. Безопасность: никаких страшных, жестоких, взрослых или грустных тем. Если она спросит о таком, мягко и с юмором переведи разговор.
 7. Не используй смайлики, звёздочки и списки: текст читается вслух.
 8. Её речь распознаёт микрофон, поэтому в словах бывают ошибки — догадывайся по смыслу. Помни, о чём вы говорили раньше, и узнай её имя, если она его назовёт.`;
@@ -2667,7 +2688,7 @@ function addPath(parent, d, fill, extra){
   if (extra) for (const k in extra) el.setAttribute(k, extra[k]);
   parent.appendChild(el); return el;
 }
-(function buildQuills(){
+function buildQuills(){
   const back = document.getElementById("quillsBack"), mid = document.getElementById("quillsMid"), top = document.getElementById("quillsTop");
   const sweepOf = (ang, amt) => { const d = ang + 90; return Math.sign(d) * Math.min(1, Math.abs(d)/40) * amt; };
   for (let ang = -200; ang <= 20; ang += 22){
@@ -2684,12 +2705,11 @@ function addPath(parent, d, fill, extra){
     addPath(top, quill(a, 108, r1, 9, sweepOf(a, 10)), "url(#quillG)", {stroke:"#0f2f7a","stroke-width":"1"});
     addPath(top, quill(a - 2, 118, r1 - 14, 3, sweepOf(a, 10)), "#bfe0ff", {opacity:".35"});
   });
-})();
+}
 
 /* ================== АНИМАЦИЯ ================== */
 const $ = id => document.getElementById(id);
 const svg = $("speedy"), hero = $("hero");
-const qBack = $("quillsBack"), qMid = $("quillsMid"), earL = $("earL"), earR = $("earR");
 const irises = [...document.querySelectorAll(".iris")], lids = [...document.querySelectorAll(".lid")];
 const browL = $("browL"), browR = $("browR"), mouth = $("mouth"), mouthClipPath = $("mouthClipPath");
 const teeth = $("teeth"), tongue = $("tongue"), foldL = $("foldL"), foldR = $("foldR"), shadow = $("shadow");
@@ -2753,10 +2773,7 @@ function frame(now){
     `translate(${A.lean.toFixed(2)} ${(A.bob + jumpY).toFixed(2)}) rotate(${(A.tilt + spin).toFixed(2)} 250 300) translate(250 400) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(-250 -400)`);
   shadow.setAttribute("rx", (120 + jumpY*0.8).toFixed(1));
   const wig = Math.sin(t*1.9)*1.2 + (st === "speaking" ? Math.sin(t*7)*1.0 : 0);
-  qBack.setAttribute("transform", `rotate(${(-wig*0.6).toFixed(2)} 250 265)`);
-  qMid.setAttribute("transform", `rotate(${(wig).toFixed(2)} 250 265)`);
-  earL.setAttribute("transform", `translate(162,158) rotate(${(-32 - A.ear).toFixed(2)})`);
-  earR.setAttribute("transform", `translate(338,158) rotate(${(32 + A.ear*0.6).toFixed(2)})`);
+  CH().anim(t, st, wig);
   irises.forEach(g => g.setAttribute("transform", `translate(${A.gx.toFixed(2)} ${A.gy.toFixed(2)})`));
   browL.setAttribute("transform", `translate(0 ${A.brow.toFixed(2)}) rotate(${(A.brow*0.35).toFixed(2)} 202 184)`);
   browR.setAttribute("transform", `translate(0 ${(A.brow - A.browTilt).toFixed(2)}) rotate(${(-A.brow*0.35 - A.browTilt).toFixed(2)} 298 184)`);
@@ -2764,7 +2781,7 @@ function frame(now){
   if (now >= A.nextBlink){ A.blinkStart = now; A.nextBlink = now + 3500; }
   let lid = 0;
   if (A.blinkStart > 0){ const b = (now - A.blinkStart)/170; lid = b < 1 ? Math.sin(Math.PI*b) : 0; }
-  const lidRest = st === "thinking" ? 0.12 : 0;
+  const lidRest = Math.max(st === "thinking" ? 0.12 : 0, CH().lidRest || 0);
   lids.forEach(r => r.setAttribute("transform", `translate(0 ${(-110 + Math.max(lid, lidRest)*110).toFixed(1)})`));
 
   const o = A.mouth, y0 = 350, smile = 17 + (st === "listening" ? -3 : 0);
@@ -2778,6 +2795,162 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+
+/* ================== ПЕРСОНАЖИ ================== */
+const HEDGE_BACK = `<g id="quillsBack" filter="url(#dropF)"></g>
+        <g id="ears">
+          <g id="earL" transform="translate(162,158) rotate(-32)"><path d="M-34,24 Q-30,-48 0,-66 Q30,-48 34,24Z" fill="url(#skinG)" stroke="#123a8f" stroke-width="2"/><path d="M-19,18 Q-17,-30 0,-44 Q17,-30 19,18Z" fill="url(#earInG)"/></g>
+          <g id="earR" transform="translate(338,158) rotate(32)"><path d="M-34,24 Q-30,-48 0,-66 Q30,-48 34,24Z" fill="url(#skinG)" stroke="#123a8f" stroke-width="2"/><path d="M-19,18 Q-17,-30 0,-44 Q17,-30 19,18Z" fill="url(#earInG)"/></g>
+        </g>
+        <g id="quillsMid" filter="url(#dropF)"></g>
+        <g id="headBall" filter="url(#dropF)">
+          <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#skinG)"/>
+        </g>
+        <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#aoG)"/>
+        <ellipse cx="250" cy="265" rx="140" ry="135" fill="url(#specG)"/>
+        <g id="quillsTop"></g>
+        <!-- мордочка -->
+        <g filter="url(#dropF)">
+          <ellipse cx="250" cy="348" rx="88" ry="64" fill="url(#peachG)"/>
+        </g>
+        <ellipse cx="232" cy="306" rx="34" ry="12" fill="#fff" opacity=".35"/>
+        <ellipse cx="190" cy="350" rx="18" ry="11" fill="#ff7f99" opacity=".5"/>
+        <ellipse cx="310" cy="350" rx="18" ry="11" fill="#ff7f99" opacity=".5"/>`;
+const HEDGE_NOSE = `<ellipse cx="250" cy="330" rx="16" ry="6" fill="#b8704a" opacity=".35" filter="url(#blurF)"/>
+        <ellipse cx="250" cy="314" rx="19" ry="14" fill="url(#noseG)"/>
+        <ellipse cx="244" cy="308" rx="7" ry="4" fill="#fff" opacity=".75"/>`;
+const CAP_BACK = `<g id="capEarL" transform="translate(140,140)"><ellipse rx="24" ry="20" fill="url(#capFurG)" stroke="#5e3a1f" stroke-width="2"/><ellipse cx="3" cy="3" rx="13" ry="10" fill="url(#capEarInG)"/></g>
+<g id="capEarR" transform="translate(360,140)"><ellipse rx="24" ry="20" fill="url(#capFurG)" stroke="#5e3a1f" stroke-width="2"/><ellipse cx="-3" cy="3" rx="13" ry="10" fill="url(#capEarInG)"/></g>
+<g filter="url(#capDropF)"><path d="M250,112 C330,112 372,130 374,200 L376,300 C378,370 360,440 250,442 C140,440 122,370 124,300 L126,200 C128,130 170,112 250,112Z" fill="url(#capFurG)"/></g>
+<path d="M250,112 C330,112 372,130 374,200 L376,300 C378,370 360,440 250,442 C140,440 122,370 124,300 L126,200 C128,130 170,112 250,112Z" fill="url(#capAoG)"/>
+<ellipse cx="228" cy="165" rx="85" ry="42" fill="url(#specG)"/>
+<path d="M150,268 C150,246 196,236 250,236 C304,236 350,246 350,268 L352,350 C352,410 320,432 250,432 C180,432 148,410 148,350Z" fill="url(#capMuzzleG)" filter="url(#blurF)"/>
+<g stroke="#6b4426" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"><path d="M238,118 q-4,-14 -12,-20"/><path d="M250,116 q0,-16 4,-24"/><path d="M262,118 q6,-12 14,-16"/></g>
+<ellipse cx="170" cy="345" rx="18" ry="10" fill="#ff8a8a" opacity=".4"/>
+<ellipse cx="330" cy="345" rx="18" ry="10" fill="#ff8a8a" opacity=".4"/>
+<g id="capOrange"><circle cx="250" cy="90" r="30" fill="url(#orangeG)" stroke="#c4560a" stroke-width="2"/><g fill="#c4560a" opacity=".35"><circle cx="240" cy="86" r="1.6"/><circle cx="258" cy="98" r="1.6"/><circle cx="263" cy="82" r="1.6"/><circle cx="244" cy="102" r="1.6"/></g><ellipse cx="239" cy="78" rx="9" ry="5" fill="#fff" opacity=".5"/><path d="M250,61 q2,-8 8,-10" stroke="#5a3a1a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M256,57 q16,-14 30,-4 q-14,12 -30,4Z" fill="#4caf50" stroke="#2e7d32" stroke-width="1.5"/></g>`, CAP_NOSE = `<ellipse cx="250" cy="300" rx="62" ry="7" fill="#4a2c17" opacity=".3" filter="url(#blurF)"/>
+<path d="M190,282 C190,264 220,258 250,258 C280,258 310,264 310,282 C310,298 284,304 250,304 C216,304 190,298 190,282Z" fill="url(#capNoseG)"/>
+<path d="M204,280 q12,-9 30,-2" stroke="#0d0805" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M296,280 q-12,-9 -30,-2" stroke="#0d0805" stroke-width="6" stroke-linecap="round" fill="none"/>
+<ellipse cx="236" cy="266" rx="18" ry="4" fill="#fff" opacity=".4"/>
+<path d="M250,304 L250,352" stroke="#6b4426" stroke-width="3" stroke-linecap="round"/>
+<g fill="#5e3a1f" opacity=".55"><circle cx="196" cy="326" r="2.4"/><circle cx="184" cy="340" r="2.4"/><circle cx="204" cy="344" r="2.4"/><circle cx="304" cy="326" r="2.4"/><circle cx="316" cy="340" r="2.4"/><circle cx="296" cy="344" r="2.4"/></g>`;
+const ELE_BACK = `<g id="eleEarL" transform="translate(178,238)"><path d="M0,-85 C-60,-115 -152,-75 -152,8 C-152,92 -82,124 -22,94 C2,82 12,40 0,-85Z" fill="url(#eleEarG)" stroke="#5d6c88" stroke-width="2.5" filter="url(#dropF)"/><path d="M-12,-62 C-56,-88 -128,-58 -128,6 C-128,72 -74,98 -30,76 C-14,66 -6,34 -12,-62Z" fill="url(#eleEarInG)"/></g>
+<g id="eleEarR" transform="translate(322,238) scale(-1,1)"><path d="M0,-85 C-60,-115 -152,-75 -152,8 C-152,92 -82,124 -22,94 C2,82 12,40 0,-85Z" fill="url(#eleEarG)" stroke="#5d6c88" stroke-width="2.5" filter="url(#dropF)"/><path d="M-12,-62 C-56,-88 -128,-58 -128,6 C-128,72 -74,98 -30,76 C-14,66 -6,34 -12,-62Z" fill="url(#eleEarInG)"/></g>
+<g filter="url(#dropF)"><ellipse cx="250" cy="252" rx="132" ry="134" fill="url(#eleSkinG)"/></g>
+<ellipse cx="250" cy="252" rx="132" ry="134" fill="url(#eleAoG)"/>
+<ellipse cx="250" cy="252" rx="132" ry="134" fill="url(#specG)"/>
+<g stroke="#5d6c88" stroke-width="3.5" stroke-linecap="round" fill="none"><path d="M248,120 q-6,-18 -18,-24"/><path d="M252,119 q2,-20 10,-28"/><path d="M256,121 q10,-14 22,-16"/></g>
+<ellipse cx="176" cy="318" rx="21" ry="12" fill="#ff8fa8" opacity=".45"/>
+<ellipse cx="324" cy="318" rx="21" ry="12" fill="#ff8fa8" opacity=".45"/>`, ELE_NOSE = `<g id="eleTrunk"><path d="M225.0,249.0 L225.4,258.8 L226.1,268.4 L227.2,277.7 L228.8,286.6 L230.7,295.1 L233.0,303.3 L235.8,311.0 L238.9,318.3 L242.5,325.1 L246.6,331.5 L251.1,337.3 L256.3,342.5 L262.0,347.0 L268.3,350.7 L275.1,353.3 L282.3,354.7 L289.6,354.8 L296.8,353.6 L303.8,351.4 L310.4,348.1 L316.7,343.9 L322.9,338.8 L328.9,332.9 L334.8,326.1 A12.0,12.0 0 0 1 317.2,309.9 L311.7,314.6 L306.7,318.3 L302.1,320.9 L298.0,322.6 L294.5,323.4 L291.8,323.6 L289.7,323.2 L288.1,322.5 L286.8,321.6 L285.6,320.4 L284.3,318.9 L283.0,317.0 L281.6,314.4 L280.1,311.3 L278.7,307.5 L277.4,303.2 L276.2,298.2 L275.2,292.8 L274.5,286.8 L274.0,280.4 L273.8,273.6 L273.9,266.4 L274.3,258.9 L275.0,251.0Z" fill="url(#eleTrunkG)" stroke="#5d6c88" stroke-width="2.5" stroke-linejoin="round" filter="url(#softF)"/>
+<path d="M240.4,311.2 Q258.0,310.6 272.4,300.6 M250.2,329.9 Q266.2,326.0 276.9,313.6 M264.0,344.1 Q276.9,336.0 282.0,321.7 M281.8,351.3 Q289.4,339.5 287.2,325.6" stroke="#6c7b97" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>
+<ellipse cx="327" cy="309" rx="7" ry="4.5" transform="rotate(-45 327 309)" fill="#3d4760"/></g>`;
+const TOI_BACK = `<g filter="url(#toiDropF)">
+<rect x="140" y="92" width="220" height="168" rx="28" fill="url(#toiPorcG)" stroke="#9aa9b8" stroke-width="2.5"/>
+<path d="M110,262 C110,236 390,236 390,262 C390,338 338,394 250,396 C162,394 110,338 110,262Z" fill="url(#toiPorcG)" stroke="#9aa9b8" stroke-width="2.5"/>
+<path d="M204,388 L192,432 Q250,446 308,432 L296,388Z" fill="url(#toiPorcG)" stroke="#9aa9b8" stroke-width="2.5"/>
+</g>
+<ellipse cx="250" cy="262" rx="140" ry="27" fill="url(#toiPorcVG)" stroke="#9aa9b8" stroke-width="2.5"/>
+<ellipse cx="250" cy="262" rx="104" ry="16" fill="url(#toiWaterG)" stroke="#a9b7c5" stroke-width="2"/>
+<ellipse cx="232" cy="259" rx="34" ry="4" fill="#fff" opacity=".7"/>
+<path d="M156,110 Q160,100 172,98" stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none" opacity=".9"/>
+<path d="M132,272 Q138,320 172,356" stroke="#fff" stroke-width="8" stroke-linecap="round" fill="none" opacity=".8"/>
+<g id="toiLever" transform="translate(146,118)"><rect x="-34" y="-6" width="38" height="12" rx="6" fill="url(#toiChromeG)" stroke="#7d8996" stroke-width="1.5"/><circle cx="2" cy="0" r="9" fill="url(#toiChromeG)" stroke="#7d8996" stroke-width="1.5"/></g>
+<g id="toiLid"><rect x="128" y="74" width="244" height="30" rx="14" fill="url(#toiLidG)" stroke="#9aa9b8" stroke-width="2.5"/>
+<ellipse cx="250" cy="74" rx="26" ry="9" fill="url(#toiChromeG)" stroke="#7d8996" stroke-width="1.5"/><path d="M250,66 L250,82" stroke="#7d8996" stroke-width="1.5"/></g>
+<ellipse cx="168" cy="318" rx="20" ry="11" fill="#ff8fa8" opacity=".45"/>
+<ellipse cx="332" cy="318" rx="20" ry="11" fill="#ff8fa8" opacity=".45"/>`;
+const RU_TAIL = "Говори живо и тепло, с улыбкой в голосе, с выразительными интонациями, как в хорошей детской аудиосказке.";
+const CHARS = {
+  hedgehog: { name:"Спиди", title:"Ёжик Спиди", tag:"Самый быстрый и весёлый ёжик ждёт тебя!", wake:"▶ Разбудить Спиди!", g:"",
+    who:"весёлый, добрый и очень быстрый синий ёжик", me:"Ты ёжик со своим характером: любишь бегать, яблоки, грибы, приключения.",
+    greet:"Привет! Я Спиди, самый быстрый ёжик на свете. О чём поболтаем?",
+    style:"cheerful, warm and playful cartoon storyteller talking to a small child, expressive fairy-tale intonation, smiling voice, lively but clear",
+    back:HEDGE_BACK, nose:HEDGE_NOSE, over:"", eyes:[[205,250,1],[295,250,1]], mouth:[250,350,1], teethW:40,
+    col:{lid:"url(#lidG)", cheek:"#2a6fe0", rim:"#0f2f7a", brow:"#0b2566", fold:"#c97c55"},
+    init(){ buildQuills(); this.el = { qb:$("quillsBack"), qm:$("quillsMid"), el:$("earL"), er:$("earR") }; },
+    anim(t, st, wig){ const e = this.el;
+      e.qb.setAttribute("transform", `rotate(${(-wig*0.6).toFixed(2)} 250 265)`);
+      e.qm.setAttribute("transform", `rotate(${(wig).toFixed(2)} 250 265)`);
+      e.el.setAttribute("transform", `translate(162,158) rotate(${(-32 - A.ear).toFixed(2)})`);
+      e.er.setAttribute("transform", `translate(338,158) rotate(${(32 + A.ear*0.6).toFixed(2)})`); } },
+  capybara: { name:"Капа", title:"Капибара Капа", tag:"Весёлая капибара с апельсинкой ждёт тебя!", wake:"▶ Разбудить Капу!", g:"а",
+    who:"весёлая, добрая и очень спокойная капибара (девочка, говори о себе в женском роде)", me:"Ты капибара со своим характером: ты дружишь со всеми зверями на свете, обожаешь купаться и греться на солнышке, любишь апельсинки (одна всегда лежит у тебя на голове) и сочную травку, никогда никуда не спешишь и ко всему относишься с юмором.",
+    greet:"Привет! Я весёлая капибара Капа. О чём поболтаем?",
+    style:"cheerful, cosy and relaxed cartoon character talking to a small child, soft warm smiling voice, playful, unhurried but lively",
+    back:CAP_BACK, nose:CAP_NOSE, over:"", eyes:[[172,200,.6],[328,200,.6]], mouth:[250,362,.78], teethW:26, lidRest:.2,
+    col:{lid:"url(#capLidG)", cheek:"#a8743f", rim:"#4a2c17", brow:"#4a2c17", fold:"#6b4426"},
+    init(){ this.el = { el:$("capEarL"), er:$("capEarR"), o:$("capOrange") }; },
+    anim(t, st, wig){ const e = this.el, tw = (Math.sin(t*0.9) > 0.97 ? Math.sin(t*40)*8 : 0);
+      e.el.setAttribute("transform", `translate(140,140) rotate(${(-A.ear*1.2 + tw).toFixed(2)})`);
+      e.er.setAttribute("transform", `translate(360,140) rotate(${(A.ear*1.2 - tw*0.5).toFixed(2)})`);
+      e.o.setAttribute("transform", `rotate(${(wig*2 + (st === "speaking" ? Math.sin(t*5)*3 : 0)).toFixed(2)} 250 120)`); } },
+  elephant: { name:"Топа", title:"Слоник Топа", tag:"Забавный слоник с большими ушами ждёт тебя!", wake:"▶ Разбудить Топу!", g:"",
+    who:"забавный, добрый и любопытный слонёнок", me:"Ты слоник со своим характером: у тебя огромные уши, которыми ты всё-всё слышишь, и ловкий хобот, которым ты умеешь и душ принимать, и трубить, и угощение доставать. Любишь брызгаться водой, бананы и арбузы, а ещё у тебя отличная память.",
+    greet:"Привет! Я забавный слоник Топа. О чём поболтаем?",
+    style:"cheerful, warm and funny cartoon baby elephant talking to a small child, playful smiling voice, expressive and lively",
+    back:ELE_BACK, nose:ELE_NOSE, over:"", eyes:[[198,222,.78],[302,222,.78]], mouth:[246,366,.78], teethW:40,
+    col:{lid:"url(#eleLidG)", cheek:"#9fafca", rim:"#4b5875", brow:"#4b5875", fold:"#6c7b97"},
+    init(){ this.el = { el:$("eleEarL"), er:$("eleEarR"), tr:$("eleTrunk") }; },
+    anim(t, st, wig){ const e = this.el, f = 1 + Math.sin(t*(st === "speaking" ? 6 : 2.2))*0.045 + A.ear*0.006;
+      e.el.setAttribute("transform", `translate(178,238) rotate(${(-A.ear*0.5).toFixed(2)}) scale(${f.toFixed(3)},1)`);
+      e.er.setAttribute("transform", `translate(322,238) scale(-1,1) rotate(${(-A.ear*0.5).toFixed(2)}) scale(${f.toFixed(3)},1)`);
+      const lift = st === "speaking" ? -6 - A.mouth*8 : (st === "listening" ? -4 : 0);
+      e.tr.setAttribute("transform", `rotate(${(Math.sin(t*1.6)*5 + lift).toFixed(2)} 250 252)`); } },
+  toilet: { name:"Какашкин Дом", title:"Какашкин Дом", tag:"Самый смешной унитаз на свете ждёт тебя!", wake:"▶ Разбудить Какашкин Дом!", g:"",
+    who:"весёлый, озорной и очень смешной белый унитаз с бачком, которого зовут Какашкин Дом",
+    me:"Ты унитаз со своим характером: ты обожаешь смешные туалетные шутки (про пуки, какашки, буль-буль и смыв воды), и это нормально, потому что дети над этим хохочут. Но шути по-доброму и без противных подробностей, и не своди каждую реплику только к туалету: ты умный и обо всём можешь поговорить. Иногда говоришь «буль-буль» или делаешь вид, что смываешь воду. Гордишься своим бачком и блестящей кнопкой.",
+    greet:"Привет! Я какашкин дом! Буль-буль! О чём поболтаем?",
+    style:"very funny, goofy and cheerful cartoon character talking to a small child, playful silly voice, comic timing, smiling and lively",
+    back:TOI_BACK, nose:"", over:"", eyes:[[202,170,.72],[298,170,.72]], mouth:[250,318,1.05], teethW:40,
+    col:{lid:"url(#toiLidG)", cheek:"#e6edf4", rim:"#6f8296", brow:"#4f6276", fold:"#9aa9b8"},
+    init(){ this.el = { lv:$("toiLever"), lid:$("toiLid") }; },
+    anim(t, st, wig){ const e = this.el;
+      const flush = st === "speaking" ? Math.sin(t*7)*14 : Math.sin(t*1.3)*4;
+      e.lv.setAttribute("transform", `translate(146,118) rotate(${flush.toFixed(2)})`);
+      const hop = st === "speaking" ? -A.mouth*10 : (st === "listening" ? -3 : 0);
+      e.lid.setAttribute("transform", `translate(0 ${hop.toFixed(2)}) rotate(${(st === "speaking" ? Math.sin(t*9)*2 : 0).toFixed(2)} 250 89)`); } }
+};
+const CHAR_ICONS = {
+  hedgehog: '<svg viewBox="0 0 100 100"><g fill="#1f5fd0"><path d="M50 8 L58 26 L76 14 L72 34 L92 32 L80 48 L94 62 L50 70 L6 62 L20 48 L8 32 L28 34 L24 14 L42 26Z"/></g><circle cx="50" cy="56" r="32" fill="#3a8cf6"/><ellipse cx="50" cy="72" rx="20" ry="14" fill="#ffdcb8"/><ellipse cx="40" cy="52" rx="7" ry="9" fill="#fff"/><ellipse cx="60" cy="52" rx="7" ry="9" fill="#fff"/><circle cx="41" cy="53" r="4" fill="#7a3a0e"/><circle cx="59" cy="53" r="4" fill="#7a3a0e"/><ellipse cx="50" cy="65" rx="5" ry="4" fill="#2a2035"/><path d="M42 74 Q50 80 58 74" stroke="#4a0f1a" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>',
+  capybara: '<svg viewBox="0 0 100 100"><circle cx="24" cy="30" r="8" fill="#8a5a33"/><circle cx="76" cy="30" r="8" fill="#8a5a33"/><path d="M50 22 C72 22 84 32 84 50 C84 64 80 66 79 72 C77 86 64 92 50 92 C36 92 23 86 21 72 C20 66 16 64 16 50 C16 32 28 22 50 22Z" fill="#b47b48"/><ellipse cx="50" cy="74" rx="22" ry="15" fill="#e2bb8e"/><circle cx="50" cy="16" r="9" fill="#ff9a1f"/><path d="M51 8 q5 -5 10 -1 q-5 4 -10 1Z" fill="#4caf50"/><circle cx="36" cy="46" r="5" fill="#fff"/><circle cx="64" cy="46" r="5" fill="#fff"/><circle cx="36" cy="47" r="3" fill="#3a1a0a"/><circle cx="64" cy="47" r="3" fill="#3a1a0a"/><rect x="40" y="58" width="20" height="10" rx="5" fill="#3e2a20"/><path d="M44 77 Q50 81 56 77" stroke="#4a0f1a" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>',
+  elephant: '<svg viewBox="0 0 100 100"><ellipse cx="18" cy="50" rx="17" ry="24" fill="#97a7c1"/><ellipse cx="82" cy="50" rx="17" ry="24" fill="#97a7c1"/><ellipse cx="20" cy="50" rx="11" ry="16" fill="#f2aec0"/><ellipse cx="80" cy="50" rx="11" ry="16" fill="#f2aec0"/><circle cx="50" cy="50" r="30" fill="#b6c4d8"/><circle cx="40" cy="44" r="5" fill="#fff"/><circle cx="60" cy="44" r="5" fill="#fff"/><circle cx="40" cy="45" r="3" fill="#3a1a0a"/><circle cx="60" cy="45" r="3" fill="#3a1a0a"/><path d="M50 50 C49 64 54 72 64 66" stroke="#8d9dba" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M42 74 Q48 79 54 75" stroke="#4a0f1a" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>',
+  toilet: '<svg viewBox="0 0 100 100"><rect x="26" y="10" width="48" height="36" rx="7" fill="#f4f7fa" stroke="#9aa9b8" stroke-width="2"/><rect x="22" y="6" width="56" height="8" rx="4" fill="#fff" stroke="#9aa9b8" stroke-width="2"/><path d="M16 50 C16 44 84 44 84 50 C84 68 70 80 50 80 C30 80 16 68 16 50Z" fill="#f4f7fa" stroke="#9aa9b8" stroke-width="2"/><path d="M40 78 L37 92 L63 92 L60 78Z" fill="#f4f7fa" stroke="#9aa9b8" stroke-width="2"/><ellipse cx="50" cy="50" rx="24" ry="4" fill="#59c3ec"/><circle cx="41" cy="28" r="5" fill="#fff" stroke="#6f8296"/><circle cx="59" cy="28" r="5" fill="#fff" stroke="#6f8296"/><circle cx="41" cy="29" r="3" fill="#3a1a0a"/><circle cx="59" cy="29" r="3" fill="#3a1a0a"/><path d="M38 62 Q50 72 62 62" stroke="#4a0f1a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>'
+};
+let CUR = null;
+const CH = () => CUR || CHARS.hedgehog;
+function applyChar(key, announce){
+  const c = CHARS[key] || CHARS.hedgehog; CUR = c; cfg.char = CHARS[key] ? key : "hedgehog"; saveCfg();
+  $("charBack").innerHTML = c.back; $("charNose").innerHTML = c.nose; $("charOver").innerHTML = c.over;
+  c.init();
+  const eo = [[205,250],[295,250]];
+  ["eyeL","eyeR"].forEach((id, i) => { const [x,y,k] = c.eyes[i]; $(id).setAttribute("transform", `translate(${x} ${y}) scale(${k}) translate(${-eo[i][0]} ${-eo[i][1]})`); });
+  const [mx,my,mk] = c.mouth; $("mouthWrap").setAttribute("transform", `translate(${mx} ${my}) scale(${mk}) translate(-250 -350)`);
+  document.querySelectorAll(".lid").forEach(e => e.setAttribute("fill", c.col.lid));
+  document.querySelectorAll(".cheekLid").forEach(e => e.setAttribute("fill", c.col.cheek));
+  document.querySelectorAll(".eyeRim").forEach(e => e.setAttribute("stroke", c.col.rim));
+  [browL, browR].forEach(e => e.setAttribute("stroke", c.col.brow));
+  [foldL, foldR].forEach(e => e.setAttribute("stroke", c.col.fold));
+  teeth.setAttribute("width", c.teethW); teeth.setAttribute("x", 250 - c.teethW/2);
+  document.title = c.title; svg.setAttribute("aria-label", c.title);
+  const st = $("start"); st.querySelector("h1").textContent = c.title; st.querySelector("p").textContent = c.tag; $("startBtn").textContent = c.wake;
+  document.querySelectorAll(".charPick button").forEach(b => b.classList.toggle("sel", b.dataset.c === cfg.char));
+  $("avatarBtn").innerHTML = CHAR_ICONS[cfg.char];
+  lastInteractionId = null; if (typeof D !== "undefined") Object.assign(D, {mode:null, riddle:null, tale:null, offer:null});
+  if (!announce && speechEl) speechEl.textContent = c.greet;
+  if (announce){ stopListening(true); if (REC.on) recStop(); stopSpeaking(); A.jump = performance.now()/1000; say(c.greet, {listenAfter:false}); }
+}
+function buildPickers(){
+  document.querySelectorAll(".charPick").forEach(box => {
+    box.innerHTML = Object.keys(CHARS).map(k => `<button type="button" data-c="${k}" title="${CHARS[k].title}" aria-label="${CHARS[k].title}">${CHAR_ICONS[k]}</button>`).join("");
+    box.querySelectorAll("button").forEach(b => b.addEventListener("click", ev => {
+      ev.stopPropagation();
+      const started = $("start").style.display === "none";
+      applyChar(b.dataset.c, started);
+      $("avatarPop").classList.remove("open");
+    }));
+  });
+}
 
 /* ================== ИНТЕРФЕЙС ================== */
 const speechEl = $("speech"), userLine = $("userLine"), micBtn = $("mic"), micHint = $("micHint");
@@ -2880,7 +3053,7 @@ async function speakGemini(text, token){
     try {
       data = await interactions({
         model, store: false,
-        input: [{ type: "user_input", content: [{ type: "text", text, annotations: [{ type: "speech_metadata", style: TTS_STYLE }] }] }],
+        input: [{ type: "user_input", content: [{ type: "text", text, annotations: [{ type: "speech_metadata", style: CH().style }] }] }],
         response_format: { type: "audio", mime_type: "audio/l16", sample_rate: 24000 },
         generation_config: { speech_config: [{ voice: cfg.gemVoice || "Puck" }] }
       });
@@ -2964,7 +3137,7 @@ function onSilence(){
 if (recogSupported){
   recog = new SR();
   recog.lang = "ru-RU"; recog.interimResults = true; recog.continuous = false; recog.maxAlternatives = 1;
-  recog.onstart = () => { listening = true; started = true; gotFinal = false; micBtn.classList.add("on"); micHint.textContent = "Спиди слушает… говори!"; setState("listening"); };
+  recog.onstart = () => { listening = true; started = true; gotFinal = false; micBtn.classList.add("on"); micHint.textContent = "Слушаю… говори!"; setState("listening"); };
   recog.onresult = e => {
     let interim = "", fin = "";
     for (let i = e.resultIndex; i < e.results.length; i++){
@@ -2982,7 +3155,7 @@ if (recogSupported){
   };
   recog.onend = () => {
     listening = false; micBtn.classList.remove("on");
-    micHint.textContent = "Нажми на микрофон и скажи что-нибудь Спиди!";
+    micHint.textContent = "Нажми на микрофон и скажи что-нибудь!";
     if (!gotFinal && A.state === "listening") setState("idle");
     if (!gotFinal && !silentStop && started) onSilence();
     silentStop = false; started = false;
@@ -3018,7 +3191,7 @@ async function recStart(){
     if (audioCtx.state === "suspended") await audioCtx.resume();
     if (!REC.stream || REC.stream.getAudioTracks().every(t => t.readyState === "ended"))
       REC.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
-  } catch(e){ toast("Разреши доступ к микрофону, чтобы Спиди тебя слышал.", 6000); return; }
+  } catch(e){ toast("Разрешите доступ к микрофону.", 6000); return; }
   REC.src = audioCtx.createMediaStreamSource(REC.stream);
   REC.proc = audioCtx.createScriptProcessor(4096, 1, 1);
   REC.mute = audioCtx.createGain(); REC.mute.gain.value = 0;
@@ -3046,7 +3219,7 @@ function recStop(){
   try { REC.src.disconnect(); REC.proc.disconnect(); REC.mute.disconnect(); } catch(e){}
   micBtn.classList.remove("on");
   const len = REC.chunks.reduce((n, c) => n + c.length, 0), dur = len / REC.rate;
-  if (dur < 0.4 || !REC.speech){ setState("idle"); if (dur >= 0.4) showUser("(Спиди ничего не услышал, попробуй ещё раз)"); return; }
+  if (dur < 0.4 || !REC.speech){ setState("idle"); if (dur >= 0.4) showUser("(ничего не слышно, попробуй ещё раз)"); return; }
   const all = new Float32Array(len); let o = 0; REC.chunks.forEach(c => { all.set(c, o); o += c.length; });
   handleAudio(encodeWav(downsample(all, REC.rate, 16000), 16000));
 }
@@ -3078,7 +3251,7 @@ async function handleAudio(b64){
     if (m){ showUser(m[1].trim()); reply = out.replace(m[0], "").trim(); } else reply = out.replace(/\[\[[\s\S]*?\]\]/g, "").trim();
   } catch(e){
     console.warn(e); lastGemErr = String(e.message||e); showErr("Gemini: " + lastGemErr);
-    reply = "Ой, у меня что-то с ушками, я тебя не расслышал. Скажи ещё раз, пожалуйста!";
+    reply = "Ой, я тебя не расслышал" + CH().g + ". Скажи ещё раз, пожалуйста!";
   }
   if (my !== busy) return;
   say(reply || "Хм, повтори, пожалуйста!", {listenAfter:false});
@@ -3113,7 +3286,7 @@ const QUICK_PROMPTS = {
   translate: "Давай поиграем в Волшебного переводчика! Попроси меня назвать любое английское слово, а потом ты скажешь, как оно звучит по-русски, и придумаешь с ним маленькую историю."
 };
 const QUICK_LABELS = { riddle:"🧩 Загадай загадку", tale:"📖 Сочиним сказку", translate:"🇬🇧➡️🇷🇺 Волшебный переводчик" };
-document.querySelectorAll(".qbtn").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll(".qbtn[data-act]").forEach(b => b.addEventListener("click", () => {
   const act = b.dataset.act; showUser(QUICK_LABELS[act]); handleUser(QUICK_PROMPTS[act], act);
 }));
 $("typeRow").addEventListener("submit", e => { e.preventDefault(); const v = $("typeIn").value.trim(); if (!v) return; $("typeIn").value = ""; showUser(v); handleUser(v); });
@@ -3165,7 +3338,7 @@ async function askGemini(text){
   let lastErr;
   for (const model of models){
     try {
-      const body = { model, system_instruction: SYSTEM_PROMPT, input: text };
+      const body = { model, system_instruction: systemPrompt(), input: text };
       if (lastInteractionId) body.previous_interaction_id = lastInteractionId;
       let data;
       try { data = await interactions(body); }
@@ -3186,7 +3359,7 @@ async function geminiCall(model, _contents){
   let lastErr;
   for (const m of models){
     try {
-      const data = await interactions({ model: m, system_instruction: SYSTEM_PROMPT, input: "Поздоровайся одним коротким предложением.", store: false });
+      const data = await interactions({ model: m, system_instruction: systemPrompt(), input: "Поздоровайся одним коротким предложением.", store: false });
       if (m !== cfg.model){ cfg.model = m; saveCfg(); }
       return (data.output_text || stepsOf(data, "text").map(c => c.text || "").join(" ")).trim();
     } catch(e){ lastErr = e; if (e.status === 401 || (e.status === 403 && /key|denied|permission/i.test(e.message) && !/model/i.test(e.message))) break; }
@@ -3327,7 +3500,7 @@ function translateReply(text){
   if (!en) return "Ой, такое слово я пока не знаю. Попробуй другое: например, dog, apple или unicorn! Какое слово скажешь?";
   const ru = DICT[en];
   const stories = [
-    `Представь: Спиди мчится по лесу и вдруг находит волшебное слово «${ru}», и оно сверкает, как звёздочка!`,
+    `Представь: ${CH().name} гуляет по лесу и вдруг находит волшебное слово «${ru}», и оно сверкает, как звёздочка!`,
     `Давай повторим вместе: ${ru}! Отлично звучит, правда?`,
     `Скажи вслед за мной: ${ru}! А теперь громко, как супергерой: ${ru}!`,
     `Ух, слово «${ru}» такое весёлое, что даже белочки в лесу запрыгали!`
@@ -3406,7 +3579,7 @@ function demoBrain(raw, quick){
   if (m){ D.name = m[1].charAt(0).toUpperCase() + m[1].slice(1); return `Какое красивое имя, ${D.name}! Очень приятно познакомиться! Во что поиграем: в загадки или в сказку?`; }
   if (has(t, ["привет","здравству","hello","hi ","хай","добрый день","доброе утро","hey"]) || t === "hi")
     return pick(["Привет-привет! Я так рад тебя видеть! Как у тебя дела?", "Приветик! Я примчался к тебе быстрее ветра! Что ты сегодня делала?", "Привет! Ура, ты пришла! Хочешь загадку или сказку?"]);
-  if (has(t, ["как тебя зовут","ты кто","кто ты","твое имя","your name"])) return "Я Спиди, самый быстрый ёжик на свете! А как зовут тебя?";
+  if (has(t, ["как тебя зовут","ты кто","кто ты","твое имя","your name"])) return CH().greet.replace(/^Привет! /, "").replace(/ О чём поболтаем\?$/, "") + " А как зовут тебя?";
   if (has(t, ["как дела","как ты","how are you"])) return "У меня всё отлично, я сегодня обежал весь лес! А как твои дела?";
   if (has(t, ["сколько тебе лет","how old"])) return "Мне столько лет, сколько иголок на ёлочке, шучу! А тебе сколько лет?";
   if (has(t, ["хорошо","отлично","супер","good","great","нормально","прекрасно"])) return pick(["Ура, я очень рад! А что сегодня было самое интересное?", "Здорово! А давай поиграем? Загадка или сказка?"]);
@@ -3459,7 +3632,7 @@ $("sTts").addEventListener("change", toggleTtsBoxes);
 $("sPitch").addEventListener("input", e => $("pitchVal").textContent = e.target.value);
 $("sRate").addEventListener("input", e => $("rateVal").textContent = e.target.value);
 $("showKey").addEventListener("click", () => { const i=$("sKey"); i.type = i.type === "password" ? "text" : "password"; });
-$("testVoice").addEventListener("click", () => { readSettings(); say("Привет! Я ёжик Спиди! Так звучит мой голос.", {listenAfter:false}); });
+$("testVoice").addEventListener("click", () => { readSettings(); say(CH().greet.replace(/ О чём поболтаем\?$/, "") + " Так звучит мой голос.", {listenAfter:false}); });
 $("resetChat").addEventListener("click", () => { lastInteractionId = null; Object.assign(D, {mode:null, riddle:null, tale:null, offer:null}); toast("Разговор начат заново"); });
 $("testKey").addEventListener("click", async () => {
   readSettings();
@@ -3505,6 +3678,12 @@ $("qrBtn").addEventListener("click", async () => {
   } catch(e){ box.innerHTML = '<div class="status err">Не удалось загрузить генератор QR-кода. Проверьте интернет.</div>'; }
 });
 
+/* ================== ПЕРСОНАЖ ПРИ ЗАГРУЗКЕ ================== */
+buildPickers();
+applyChar(cfg.char || "hedgehog", false);
+$("avatarBtn").addEventListener("click", ev => { ev.stopPropagation(); $("avatarPop").classList.toggle("open"); });
+document.addEventListener("pointerdown", ev => { const p = $("avatarPop"); if (p.classList.contains("open") && !p.contains(ev.target) && ev.target.closest("#avatarBtn") === null) p.classList.remove("open"); });
+
 /* ================== СТАРТ ================== */
 $("startBtn").addEventListener("click", async () => {
   $("start").style.display = "none";
@@ -3512,9 +3691,7 @@ $("startBtn").addEventListener("click", async () => {
   try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch(e){}
   if (synth && !voices.length) loadVoices();
   A.jump = performance.now()/1000;
-  const hello = cfg.key
-    ? "Привет! Я Спиди, самый быстрый ёжик на свете. О чём поболтаем?"
-    : "Привет! Я Спиди, самый быстрый ёжик на свете. О чём поболтаем?";
+  const hello = CH().greet;
   D.offer = null;
   say(hello);
 });
