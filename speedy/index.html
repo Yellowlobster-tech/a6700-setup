@@ -3205,14 +3205,17 @@ function stopListening(silent){
 const REC = { on:false, mode:"", t0:0, stream:null, src:null, proc:null, mute:null, chunks:[], rate:48000, speech:false, lastLoud:0, peak:0 };
 function useGeminiEars(){ return !!cfg.key && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
 async function recStart(){
-  if (REC.on) return;
-  stopSpeaking(); busy++;
+  if (REC.on || REC.starting) return;
+  stopSpeaking(); busy++; REC.starting = true;
+  micBtn.classList.add("wait"); micHint.textContent = "Включаю микрофон…";
+  const slow = setTimeout(() => { if (REC.starting) showDiag("Если вверху появилось окошко про микрофон, нажмите «Разрешить»."); }, 1500);
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === "suspended") await audioCtx.resume();
     if (!REC.stream || REC.stream.getAudioTracks().every(t => t.readyState === "ended"))
       REC.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
-  } catch(e){ toast("Разрешите доступ к микрофону.", 6000); return; }
+  } catch(e){ clearTimeout(slow); REC.starting = false; micBtn.classList.remove("wait"); micHint.textContent = "Микрофон не включился: " + (e.name || "") + " " + (e.message || ""); showDiag("Микрофон: " + (e.name || "") + " " + (e.message || e)); setState("idle"); return; }
+  clearTimeout(slow); REC.starting = false; micBtn.classList.remove("wait"); micHint.textContent = ""; showDiag("");
   REC.src = audioCtx.createMediaStreamSource(REC.stream);
   REC.proc = audioCtx.createScriptProcessor(4096, 1, 1);
   REC.mute = audioCtx.createGain(); REC.mute.gain.value = 0;
@@ -3349,6 +3352,13 @@ function stepsOf(data, type){
   return out;
 }
 let lastInteractionId = null, lastGemErr = "";
+function showDiag(msg){
+  let el = document.getElementById("errLine");
+  if (!el){ el = document.createElement("div"); el.id = "errLine"; el.style.cssText = "font-size:12px;color:#c62828;margin-top:4px"; document.getElementById("bubble").appendChild(el); }
+  el.textContent = msg;
+}
+window.addEventListener("error", e => { try { showDiag("Ошибка: " + (e.message || e)); } catch(_){} });
+window.addEventListener("unhandledrejection", e => { try { showDiag("Ошибка: " + ((e.reason && e.reason.message) || e.reason)); } catch(_){} });
 function showErr(msg){
   let el = document.getElementById("errLine");
   if (!el){ el = document.createElement("div"); el.id = "errLine"; el.style.cssText = "font-size:12px;color:#c62828;margin-top:4px"; document.getElementById("bubble").appendChild(el); }
