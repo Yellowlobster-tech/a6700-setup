@@ -7,6 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Спиди">
 <meta name="theme-color" content="#bfe6ff">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <title>Ёжик Спиди</title>
 <style>
 :root{
@@ -3707,7 +3710,10 @@ const SITE_URL = location.protocol === "https:" ? location.origin + location.pat
     cfg.key = decodeURIComponent(m[1]);
     const v = location.hash.match(/[#&]v=([^&]+)/); if (v) cfg.gemVoice = decodeURIComponent(v[1]);
     saveCfg(); updateBadge();
-    history.replaceState(null, "", location.pathname);
+    // На iPad/iPhone значок «На экран Домой» хранит свои данные отдельно от Safari.
+    // Поэтому в Safari оставляем ключ в адресе: тогда значок унесёт его с собой.
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (!(ios && !navigator.standalone)) history.replaceState(null, "", location.pathname);
     setTimeout(() => toast("Ключ сохранён на этом устройстве. Спиди в умном режиме!", 5000), 300);
   } catch(e){}
 })();
